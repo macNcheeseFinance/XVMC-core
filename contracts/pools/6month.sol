@@ -668,21 +668,12 @@ contract XVMCtimeDeposit is ReentrancyGuard {
         uint256 currentAmount = (balanceOf().mul(user.shares)).div(totalShares);
         totalShares = totalShares.sub(user.shares);
 		
-        /*
-            No need to delete votes, since if pools change, so will the governing contract and the
-                        voting will be checked through new pool contracts
-
-            if(userVote[_staker] != 0) {
-                _updateVotingSubDiff(_staker, userVote[_staker], user.shares);
-            }
-        */
+        user.shares = 0; // equivalent to deleting the stake. Pools are no longer to be used,
+						//setting user shares to 0 is sufficient
 		
 		IacPool(migrationPool).hopDeposit(currentAmount, _staker, user.lastDepositedTime, user.mandatoryTimeToServe);
 
         emit MigrateStake(msg.sender, currentAmount, user.shares, _staker);
-
-        user.shares = 0; // equivalent to deleting the stake. Pools are no longer to be used,
-						//setting user shares to 0 is sufficient
     }
 
     /**
