@@ -23,7 +23,7 @@ contract XVMColdMasterchefRewards is ERC20, ERC20Burnable, Ownable {
     function updateOwner() external {
         require(allowOwnerTransfer, "disabled");
 
-        transferOwnership(IMasterchef(oldMasterchef).owner());
+        _transferOwnership(IMasterchef(oldMasterchef).owner());
     }
 
     function enableDisableOwnershipTransfer(bool _setting) public onlyOwner {
