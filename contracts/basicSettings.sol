@@ -591,7 +591,7 @@ contract XVMCbasics is Ownable {
     //transfers ownership of this contract to new governor
     //masterchef is the token owner, governor is the owner of masterchef
     function changeGovernor() external {
-		transferOwnership(IToken(token).governor());
+		_transferOwnership(IToken(token).governor());
     }
 
     function updatePools() external {
