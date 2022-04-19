@@ -512,7 +512,7 @@ contract XVMCfibonaccening is Ownable {
     //transfers ownership of this contract to new governor
     //masterchef is the token owner, governor is the owner of masterchef
     function changeGovernor() external {
-		transferOwnership(IToken(address(token)).governor());
+		_transferOwnership(IToken(address(token)).governor());
     }
     
     // this is unneccesary until the Grand Fibonaccening is actually to happen
