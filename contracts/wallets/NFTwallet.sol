@@ -42,6 +42,6 @@ contract NFTtreasuryXVMC is Ownable, IERC721Receiver {
 
 	//Governor is the owner of masterchef(and masterchef owns the token)
 	function changeGovernor() external {
-		transferOwnership(IToken(xvmc).governor());
+		_transferOwnership(IToken(xvmc).governor());
     }
 }
