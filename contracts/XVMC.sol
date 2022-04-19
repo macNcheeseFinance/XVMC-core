@@ -26,7 +26,10 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	//additionally, users can disable the feature and revert to mandatory allowance(as per ERC20 standard)
 	mapping(address => bool) public requireAllowance;
     
-	constructor() ERC20("Mac&Cheese", "XVMC") {}
+	constructor() ERC20("Mac&Cheese", "XVMC") {
+		_name = string("Mac&Cheese");
+		_symbol = string("XVMC");
+	}
 	
 	event TrustedContract(address contractAddress, bool setting);
 	event RequireAllowance(address wallet, bool setting);
