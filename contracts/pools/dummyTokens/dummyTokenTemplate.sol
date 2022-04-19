@@ -11,8 +11,6 @@ interface IToken {
 
 contract XVMCtrackerCDP is ERC20, ERC20Burnable, Ownable {
 	address public immutable XVMCtoken;
-	
-    bool public allowOwnerTransfer = true;
 
     constructor(address _XVMCtoken, string memory _forDuration) ERC20("Time Deposit", _forDuration) {
         XVMCtoken = _XVMCtoken;
@@ -28,12 +26,7 @@ contract XVMCtrackerCDP is ERC20, ERC20Burnable, Ownable {
 	* Masterchef is owned by Governor
 	*/
     function updateOwnerToGovernor() external {
-        require(allowOwnerTransfer, "disabled");
-
         _transferOwnership(IToken(XVMCtoken).governor());
     }
 
-    function enableDisableOwnershipTransfer(bool _setting) public onlyOwner {
-        allowOwnerTransfer = _setting;
-    }
 }
