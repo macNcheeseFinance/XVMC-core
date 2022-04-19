@@ -11,8 +11,6 @@ interface IMasterchef {
 
 contract XVMColdMasterchefRewards is ERC20, ERC20Burnable, Ownable {
 	address public immutable oldMasterchef = 0x9BD741F077241b594EBdD745945B577d59C8768e;
-	
-    bool public allowOwnerTransfer = true;
 
     constructor() ERC20("Collecting Rewards", "Previous XVMC") {}
 
@@ -21,12 +19,6 @@ contract XVMColdMasterchefRewards is ERC20, ERC20Burnable, Ownable {
     }
 
     function updateOwner() external {
-        require(allowOwnerTransfer, "disabled");
-
         _transferOwnership(IMasterchef(oldMasterchef).owner());
-    }
-
-    function enableDisableOwnershipTransfer(bool _setting) public onlyOwner {
-        allowOwnerTransfer = _setting;
     }
 }
