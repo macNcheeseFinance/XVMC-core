@@ -10,11 +10,13 @@ interface IToken {
 }
 
 contract XVMCtrackerCDP is ERC20, ERC20Burnable, Ownable {
-	address public immutable XVMCtoken = tokenaddress;
+	address public immutable XVMCtoken;
 	
     bool public allowOwnerTransfer = true;
 
-    constructor() ERC20("Time Deposit", "1 Month XVMC") {}
+    constructor(address _XVMCtoken, string memory _forDuration) ERC20("Time Deposit", _forDuration) {
+        XVMCtoken = _XVMCtoken;
+    }
 
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
