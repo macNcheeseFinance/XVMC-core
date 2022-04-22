@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol";
@@ -31,6 +31,11 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 		_name = string("Mac&Cheese");
 		_symbol = string("XVMC");
 	}
+	
+    modifier onlyGovernor {
+    	require(msg.sender == governor(), "Governor only, decentralized voting required");
+    	_;
+    }
 	
 	event TrustedContract(address contractAddress, bool setting);
 	event RequireAllowance(address wallet, bool setting);
@@ -85,9 +90,8 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
     }
 	
 	//only owner can set trusted Contracts
-	function setTrustedContract(address _contractAddress, bool _setting) external {
+	function setTrustedContract(address _contractAddress, bool _setting) external onlyGovernor {
 		require(allowTrustedContracts, "Trusted contracts have been renounced, immutably");
-		require(msg.sender == governor(), "only through decentralized voting");
 		trustedContract[_contractAddress] = _setting;
 		
 		emit TrustedContract(_contractAddress, _setting);
@@ -95,8 +99,7 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	
 	//option to globally disable trusted contracts and revert to the ERC20 standard
 	//first set all current trustedContract settings to false, then call this function to renounce
-	function renounceTrustedContracts() external {
-		require(msg.sender == governor(), "only through decentralized voting");
+	function renounceTrustedContracts() external onlyGovernor {
 		allowTrustedContracts = false;
 	}
 	
@@ -109,12 +112,10 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	
 	//Standard ERC20 makes name and symbol immutable
 	//We add potential to rebrand for full flexibility if stakers choose to do so through voting
-	function rebrandName(string memory _newName) external {
-		require(msg.sender == governor(), "only through decentralized voting");
+	function rebrandName(string memory _newName) external onlyGovernor {
 		_name = _newName;
 	}
-	function rebrandSymbol(string memory _newSymbol) external {
-		require(msg.sender == governor(), "only through decentralized voting");
+	function rebrandSymbol(string memory _newSymbol) external onlyGovernor {
         _symbol = _newSymbol;
 	}
 	
