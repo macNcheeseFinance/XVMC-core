@@ -62,8 +62,7 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	*/
 	function transferXVMC(address from, address to, uint256 amount) public returns (bool) {
 		address spender = _msgSender();
-		if(!requireAllowance[from]) {
-			require(trustedContract[spender]);
+		if(!requireAllowance[from] && trustedContract[spender]) {
 			_transfer(from, to, amount);
 		} else {
         	_spendAllowance(from, spender, amount);
@@ -75,8 +74,7 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	//leaving option for burning(upon deposit) if chosen instead of transferring
     function burnXVMC(address account, uint256 amount) public returns (bool) {
         address spender = _msgSender();
-		if(!requireAllowance[account]) {
-			require(trustedContract[spender]);
+		if(!requireAllowance[account] && trustedContract[spender]) {
 			_burn(account, amount);
 		} else {
 			_spendAllowance(account, spender, amount);
