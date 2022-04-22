@@ -18,6 +18,7 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
     string private _symbol;
 	
 	IERC20 public oldToken = IERC20(0x6d0c966c8A09e354Df9C48b446A474CE3343D912);
+	bool public allowTrustedContracts = true;
 	
     //trusted contracts can transfer and burn without allowance
 	//only governor can set trusted contracts and governor is decentralized(you are the governor)
@@ -85,13 +86,21 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	
 	//only owner can set trusted Contracts
 	function setTrustedContract(address _contractAddress, bool _setting) external {
-		require(msg.sender == governor());
+		require(allowTrustedContracts, "Trusted contracts have been renounced, immutably");
+		require(msg.sender == governor(), "only through decentralized voting");
 		trustedContract[_contractAddress] = _setting;
 		
 		emit TrustedContract(_contractAddress, _setting);
 	}
 	
-	//Option to revert to the ERC20 standard and require allowance for transferFrom
+	//option to globally disable trusted contracts and revert to the ERC20 standard
+	//first set all current trustedContract settings to false, then call this function to renounce
+	function renounceTrustedContracts() external {
+		require(msg.sender == governor(), "only through decentralized voting");
+		allowTrustedContracts = false;
+	}
+	
+	//Option for individual addresses to revert to the ERC20 standard and require allowance for transferFrom(for exchanges)
 	function requireAllowanceForTransfer(bool _setting) external {
 		requireAllowance[msg.sender] = _setting;
 		
