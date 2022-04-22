@@ -32,7 +32,7 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 		_symbol = string("XVMC");
 	}
 	
-    modifier onlyGovernor {
+    modifier decentralizedVoting {
     	require(msg.sender == governor(), "Governor only, decentralized voting required");
     	_;
     }
@@ -90,7 +90,7 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
     }
 	
 	//only owner can set trusted Contracts
-	function setTrustedContract(address _contractAddress, bool _setting) external onlyGovernor {
+	function setTrustedContract(address _contractAddress, bool _setting) external decentralizedVoting {
 		require(allowTrustedContracts, "Trusted contracts have been renounced, immutably");
 		trustedContract[_contractAddress] = _setting;
 		
@@ -99,7 +99,7 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	
 	//option to globally disable trusted contracts and revert to the ERC20 standard
 	//first set all current trustedContract settings to false, then call this function to renounce
-	function renounceTrustedContracts() external onlyGovernor {
+	function renounceTrustedContracts() external decentralizedVoting {
 		allowTrustedContracts = false;
 	}
 	
@@ -112,10 +112,10 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	
 	//Standard ERC20 makes name and symbol immutable
 	//We add potential to rebrand for full flexibility if stakers choose to do so through voting
-	function rebrandName(string memory _newName) external onlyGovernor {
+	function rebrandName(string memory _newName) external decentralizedVoting {
 		_name = _newName;
 	}
-	function rebrandSymbol(string memory _newSymbol) external onlyGovernor {
+	function rebrandSymbol(string memory _newSymbol) external decentralizedVoting {
         _symbol = _newSymbol;
 	}
 	
