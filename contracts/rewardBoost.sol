@@ -170,7 +170,8 @@ contract XVMCfibonaccening is Ownable {
         );
 		//duration(in blocks) must be lower than amount of blocks mined in 30days(can't last more than roughly 30days)
 		//30(days)*24(hours)*3600(seconds) * 100 (to negate x100 blocks per second) = 259200000
-		require(durationInBlocks <= (259200000 / IXVMCgovernor(owner()).blocks100PerSecond()), "maximum 30days duration");
+		uint256 amountOfBlocksIn30Days = 259200000 / IXVMCgovernor(owner()).blocks100PerSecond();
+		require(durationInBlocks <= amountOfBlocksIn30Days, "maximum 30days duration");
     
 		IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens); 
         fibonacceningProposals.push(
