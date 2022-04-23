@@ -142,7 +142,7 @@ contract XVMCfarms is Ownable {
         ) external { 
     	require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
     	require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "there is a minimum cost to vote");
-    	require(poolid == 0 || poolid == 1 || poolid == 7 || poolid == 8, "only allowed for these pools"); 
+    	require(poolid == 0 || poolid == 1 || poolid == 7 || poolid == 8 || poolid == 9, "only allowed for these pools"); 
 		
 		//0 and 1 are XVMC-USDC and XVMC-wMatic pools
 		//7 and 8 are meme pools
