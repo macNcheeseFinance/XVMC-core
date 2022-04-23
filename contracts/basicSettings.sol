@@ -324,7 +324,7 @@ contract XVMCbasics is Ownable {
     	    RolloverBonusStructure(true, block.timestamp, depositingTokens, 0, delay, _forPoolAddress, _newBonus)
     	    );  
     	    
-        emit InitiateRolloverBonus(rolloverBonuses.length, depositingTokens, _forPoolAddress, _newBonus, msg.sender, delay);
+        emit InitiateRolloverBonus(rolloverBonuses.length - 1, depositingTokens, _forPoolAddress, _newBonus, msg.sender, delay);
     }
 	function voteProposalRolloverBonusY(uint256 proposalID, uint256 withTokens) external {
 		require(rolloverBonuses[proposalID].valid, "invalid");
