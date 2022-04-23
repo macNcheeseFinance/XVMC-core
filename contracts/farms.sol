@@ -20,6 +20,7 @@ interface IXVMCgovernor {
 	function treasuryWallet() external view returns (address);
 	function burnFromOldChef(uint256 _amount) external;
 	function setGovernorTax(uint256 _amount) external;
+	function eventFibonacceningActive() external view returns (bool);
 }
 
 interface IMasterChef {
@@ -293,7 +294,7 @@ contract XVMCfarms is Ownable {
     */
     function enforceRewardReduction(bool withUpdate) public {
         uint256 allocPoint; uint16 depositFeeBP;
-        if (IMasterChef(masterchef).XVMCPerBlock() > maxRewards && !isReductionEnforced) {
+        if (IXVMCGovernor(owner()).eventFibonacceningActive() && !isReductionEnforced) {
             
             (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(0);
             IXVMCgovernor(owner()).setPool(
@@ -317,7 +318,7 @@ contract XVMCfarms is Ownable {
             
             isReductionEnforced = true;
             
-        } else if(IMasterChef(masterchef).XVMCPerBlock() < maxRewards && isReductionEnforced) {
+        } else if(!(IXVMCGovernor(owner()).eventFibonacceningActive()) && isReductionEnforced) {
 
         //inverses the formula... perhaps should keep last Reward
         //the mutliplier shall not change during event!
