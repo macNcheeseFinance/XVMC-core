@@ -146,12 +146,18 @@ contract XVMCfarms is Ownable {
 		
 		//0 and 1 are XVMC-USDC and XVMC-wMatic pools
 		//7 and 8 are meme pools
+		//9 is for NFT staking(nfts and virtual land)
     	if(poolid == 0 || poolid == 1) {
     	    require(
     	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * 125 / 1000),
     	        "Maximum 12.5% of total allocation"
     	       );
-    	} else {
+    	} else if(poolid == 9) {
+			require(
+    	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * 25 / 100),
+    	        "Maximum 25% of total allocation"
+    	       );
+		} else {
     	    require(
     	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * 5 / 100),
     	        "Maximum 5% of total allocation"
