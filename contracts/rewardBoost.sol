@@ -168,6 +168,8 @@ contract XVMCfibonaccening is Ownable {
             (newRewardPerBlock * durationInBlocks) < (getTotalSupply() * 23 / 100),
             "Safeguard: Can't print more than 23% of tokens in single event"
         );
+		//duration(in blocks) must be lower than amount of blocks mined in 30days(can't last more than roughly 30days)
+		require(durationInBlocks <= (30*24*3600 * 100 / IXVMCgovernor(owner()).blocks100PerSecond()), "maximum 30days duration");
     
 		IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens); 
         fibonacceningProposals.push(
