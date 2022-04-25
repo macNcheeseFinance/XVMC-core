@@ -142,6 +142,7 @@ contract XVMCfibonaccening is Ownable {
             (newRewardPerBlock * durationInBlocks) < (getTotalSupply() * 23 / 100),
             "Safeguard: Can't print more than 23% of tokens in single event"
         );
+		require(newRewardPerBlock > goldenRatio, "can't go below goldenratio"); //would enable grand fibonaccening
 		//duration(in blocks) must be lower than amount of blocks mined in 30days(can't last more than roughly 30days)
 		//30(days)*24(hours)*3600(seconds) * 100 (to negate x100 blocks per second) = 259200000
 		uint256 amountOfBlocksIn30Days = 259200000 / IXVMCgovernor(owner()).blocks100PerSecond();
