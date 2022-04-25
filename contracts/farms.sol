@@ -125,7 +125,7 @@ contract XVMCfarms is Ownable {
 	
 	event ProposeGovTax(uint256 proposalID, uint256 valueSacrificedForVote, uint256 proposedTax, address indexed enforcer, uint256 delay);
 	
-	event AddVotes(uint256 _type, address indexed voter, uint256 tokensSacrificed, bool _for);
+	event AddVotes(uint256 _type, uint256 proposalID, address indexed voter, uint256 tokensSacrificed, bool _for);
 	event VetoProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
 	event ExecuteProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
     
@@ -179,7 +179,7 @@ contract XVMCfarms is Ownable {
 
 		proposalFarmUpdate[proposalID].valueSacrificedForVote+= withTokens;
 			
-		emit AddVotes(0, msg.sender, withTokens, true);
+		emit AddVotes(0, proposalID, msg.sender, withTokens, true);
 	}
 	function voteFarmProposalN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(proposalFarmUpdate[proposalID].valid, "invalid");
@@ -189,7 +189,7 @@ contract XVMCfarms is Ownable {
 		proposalFarmUpdate[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoFarmProposal(proposalID); }
 
-		emit AddVotes(0, msg.sender, withTokens, false);
+		emit AddVotes(0, proposalID, msg.sender, withTokens, false);
 	}
     function vetoFarmProposal(uint256 proposalID) public {
     	require(proposalFarmUpdate[proposalID].valid, "already invalid");
@@ -247,7 +247,7 @@ contract XVMCfarms is Ownable {
 
 		proposeRewardReduction[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(1, msg.sender, withTokens, true);
+		emit AddVotes(1, proposalID, msg.sender, withTokens, true);
 	}
 	function voteRewardsReductionN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(proposeRewardReduction[proposalID].valid, "invalid");
@@ -257,7 +257,7 @@ contract XVMCfarms is Ownable {
 		proposeRewardReduction[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoRewardsReduction(proposalID); }
 
-		emit AddVotes(1, msg.sender, withTokens, false);
+		emit AddVotes(1, proposalID, msg.sender, withTokens, false);
 	}
     function vetoRewardsReduction(uint256 proposalID) public {
     	require(proposeRewardReduction[proposalID].valid == true, "Proposal already invalid");
@@ -294,7 +294,7 @@ contract XVMCfarms is Ownable {
     */
     function enforceRewardReduction(bool withUpdate) public {
         uint256 allocPoint; uint16 depositFeeBP;
-        if (IXVMCGovernor(owner()).eventFibonacceningActive() && !isReductionEnforced) {
+        if (IXVMCgovernor(owner()).eventFibonacceningActive() && !isReductionEnforced) {
             
             (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(0);
             IXVMCgovernor(owner()).setPool(
@@ -318,7 +318,7 @@ contract XVMCfarms is Ownable {
             
             isReductionEnforced = true;
             
-        } else if(!(IXVMCGovernor(owner()).eventFibonacceningActive()) && isReductionEnforced) {
+        } else if(!(IXVMCgovernor(owner()).eventFibonacceningActive()) && isReductionEnforced) {
 
         //inverses the formula... perhaps should keep last Reward
         //the mutliplier shall not change during event!
@@ -378,7 +378,7 @@ contract XVMCfarms is Ownable {
 
 		governorTransferProposals[proposalID].valueSacrificedForVote+= withTokens;
 			
-		emit AddVotes(2, msg.sender, withTokens, true);
+		emit AddVotes(2, proposalID, msg.sender, withTokens, true);
 	}
 	function voteGovernorTransferN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(governorTransferProposals[proposalID].valid, "invalid");
@@ -388,7 +388,7 @@ contract XVMCfarms is Ownable {
 		governorTransferProposals[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoGovernorTransfer(proposalID); }
 
-		emit AddVotes(2, msg.sender, withTokens, false);
+		emit AddVotes(2, proposalID, msg.sender, withTokens, false);
 	}
     function vetoGovernorTransfer(uint256 proposalID) public {
     	require(governorTransferProposals[proposalID].valid == true, "Invalid proposal"); 
@@ -458,7 +458,7 @@ contract XVMCfarms is Ownable {
 
 		burnProposals[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(3, msg.sender, withTokens, true);
+		emit AddVotes(3, proposalID, msg.sender, withTokens, true);
 	}
 	function voteBurnN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(burnProposals[proposalID].valid, "invalid");
@@ -468,7 +468,7 @@ contract XVMCfarms is Ownable {
 		burnProposals[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoBurn(proposalID); }
 
-		emit AddVotes(3, msg.sender, withTokens, false);
+		emit AddVotes(3, proposalID, msg.sender, withTokens, false);
 	}
     function vetoBurn(uint256 proposalID) public {
     	require(burnProposals[proposalID].valid == true, "Invalid proposal");
@@ -521,7 +521,7 @@ contract XVMCfarms is Ownable {
 
 		govTaxProposals[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(4, msg.sender, withTokens, true);
+		emit AddVotes(4, proposalID, msg.sender, withTokens, true);
 	}
 	function voteGovTaxN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(govTaxProposals[proposalID].valid, "invalid");
@@ -531,7 +531,7 @@ contract XVMCfarms is Ownable {
 		govTaxProposals[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoGovTax(proposalID); }
 
-		emit AddVotes(4, msg.sender, withTokens, false);
+		emit AddVotes(4, proposalID, msg.sender, withTokens, false);
 	}
     function vetoGovTax(uint256 proposalID) public {
     	require(govTaxProposals[proposalID].valid == true, "Invalid proposal");
