@@ -32,11 +32,6 @@ interface IXVMCgovernor {
     function acPool6() external view returns (address);
 }
 
-interface IMasterChef {
-    function XVMCPerBlock() external view returns (uint256);
-    function owner() external view returns (address);
-}
-
 interface IacPool {
     function totalShares() external view returns (uint256);
     function totalVotesForID(uint256 proposalID) external view returns (uint256);
@@ -84,9 +79,6 @@ contract XVMCconsensus is Ownable {
 	
 	uint256 public immutable goldenRatio = 1618; //1.618 is the golden ratio
     address public immutable token; //XVMC token (address)
-    
-    //masterchef address
-    address public masterchef;
 	
     //addresses for time-locked deposits(autocompounding pools)
     address public acPool1;
@@ -411,12 +403,7 @@ contract XVMCconsensus is Ownable {
         acPool5 = IXVMCgovernor(owner()).acPool5();
         acPool6 = IXVMCgovernor(owner()).acPool6();
     }
-    
-  function setMasterchef() external {
-		address _chefo = IMasterChef(token).owner();
-		
-        masterchef = _chefo;
-    }
+   
     
     //transfers ownership of this contract to new governor
     //masterchef is the token owner, governor is the owner of masterchef
