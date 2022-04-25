@@ -98,7 +98,7 @@ contract XVMCbasics is Ownable {
     event ProposeSetGrandParameters(uint256 proposalID, uint256 valueSacrificedForVote, address indexed enforcer, uint256 delay, uint256 delayBetween, uint256 duration);
     
 	
-	event AddVotes(uint256 _type, address indexed voter, uint256 tokensSacrificed, bool _for);
+	event AddVotes(uint256 _type, uint256 proposalID, address indexed voter, uint256 tokensSacrificed, bool _for);
 	event VetoProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
 	event ExecuteProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
 
@@ -145,7 +145,7 @@ contract XVMCbasics is Ownable {
 		
 		minDepositProposals[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(0, msg.sender, withTokens, true);
+		emit AddVotes(0, proposalID, msg.sender, withTokens, true);
 	}
 	function voteSetMinDepositN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(minDepositProposals[proposalID].valid, "invalid");
@@ -155,7 +155,7 @@ contract XVMCbasics is Ownable {
 		minDepositProposals[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoSetMinDeposit(proposalID); }
 
-		emit AddVotes(0, msg.sender, withTokens, false);
+		emit AddVotes(0, proposalID, msg.sender, withTokens, false);
 	}
     function vetoSetMinDeposit(uint256 proposalID) public {
     	require(minDepositProposals[proposalID].valid == true, "Proposal already invalid");
@@ -207,7 +207,7 @@ contract XVMCbasics is Ownable {
 
 		delayProposals[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(1, msg.sender, withTokens, true);
+		emit AddVotes(1, proposalID, msg.sender, withTokens, true);
 	}
 	function voteDelayBeforeEnforceProposalN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(delayProposals[proposalID].valid, "invalid");
@@ -217,7 +217,7 @@ contract XVMCbasics is Ownable {
 		delayProposals[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoDelayBeforeEnforceProposal(proposalID); }
 
-		emit AddVotes(1, msg.sender, withTokens, false);
+		emit AddVotes(1, proposalID, msg.sender, withTokens, false);
 	}
     function vetoDelayBeforeEnforceProposal(uint256 proposalID) public {
     	require(delayProposals[proposalID].valid == true, "Proposal already invalid");
@@ -273,7 +273,7 @@ contract XVMCbasics is Ownable {
 
 		proposeDurationCalculation[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(2, msg.sender, withTokens, true);
+		emit AddVotes(2, proposalID, msg.sender, withTokens, true);
 	}
 	function voteProposalDurationForCalculationN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(proposeDurationCalculation[proposalID].valid, "invalid");
@@ -283,7 +283,7 @@ contract XVMCbasics is Ownable {
 		proposeDurationCalculation[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoProposalDurationForCalculation(proposalID); }
 
-		emit AddVotes(2, msg.sender, withTokens, false);
+		emit AddVotes(2, proposalID, msg.sender, withTokens, false);
 	}
     function vetoProposalDurationForCalculation(uint256 proposalID) public {
     	require(proposeDurationCalculation[proposalID].valid, "already invalid"); 
@@ -333,7 +333,7 @@ contract XVMCbasics is Ownable {
 
 		rolloverBonuses[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(3, msg.sender, withTokens, true);
+		emit AddVotes(3, proposalID, msg.sender, withTokens, true);
 	}
 	function voteProposalRolloverBonusN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(rolloverBonuses[proposalID].valid, "invalid");
@@ -343,7 +343,7 @@ contract XVMCbasics is Ownable {
 		rolloverBonuses[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoProposalRolloverBonus(proposalID); }
 
-		emit AddVotes(3, msg.sender, withTokens, false);
+		emit AddVotes(3, proposalID, msg.sender, withTokens, false);
 	}
     function vetoProposalRolloverBonus(uint256 proposalID) public {
     	require(rolloverBonuses[proposalID].valid, "already invalid"); 
@@ -401,7 +401,7 @@ contract XVMCbasics is Ownable {
 
 		callFeeProposal[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(4, msg.sender, withTokens, true);
+		emit AddVotes(4, proposalID, msg.sender, withTokens, true);
 	}
 	function voteSetCallFeeN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(callFeeProposal[proposalID].valid, "invalid");
@@ -411,7 +411,7 @@ contract XVMCbasics is Ownable {
 		callFeeProposal[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoSetCallFee(proposalID); }
 
-		emit AddVotes(4, msg.sender, withTokens, false);
+		emit AddVotes(4, proposalID, msg.sender, withTokens, false);
 	}
     function vetoSetCallFee(uint256 proposalID) public {
     	require(callFeeProposal[proposalID].valid == true, "Proposal already invalid");
@@ -487,7 +487,7 @@ contract XVMCbasics is Ownable {
 		
 		minThresholdFibonacceningProposal[proposalID].valueSacrificedForVote+= withTokens;
 			
-		emit AddVotes(5, msg.sender, withTokens, true);
+		emit AddVotes(5, proposalID, msg.sender, withTokens, true);
 	}
 	function voteSetMinThresholdFibonacceningN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(minThresholdFibonacceningProposal[proposalID].valid, "invalid");
@@ -497,7 +497,7 @@ contract XVMCbasics is Ownable {
 		minThresholdFibonacceningProposal[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoSetMinThresholdFibonaccening(proposalID); }
 
-		emit AddVotes(5, msg.sender, withTokens, false);
+		emit AddVotes(5, proposalID, msg.sender, withTokens, false);
 	}
     function vetoSetMinThresholdFibonaccening(uint256 proposalID) public {
     	require(minThresholdFibonacceningProposal[proposalID].valid == true, "Invalid proposal"); 
@@ -549,7 +549,7 @@ contract XVMCbasics is Ownable {
 		
 		grandSettingProposal[proposalID].valueSacrificedForVote+= withTokens;
 			
-		emit AddVotes(6, msg.sender, withTokens, true);
+		emit AddVotes(6, proposalID, msg.sender, withTokens, true);
 	}
 	function voteSetGrandParametersN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(grandSettingProposal[proposalID].valid, "invalid");
@@ -559,7 +559,7 @@ contract XVMCbasics is Ownable {
 		grandSettingProposal[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoSetGrandParameters(proposalID); }
 
-		emit AddVotes(6, msg.sender, withTokens, false);
+		emit AddVotes(6, proposalID, msg.sender, withTokens, false);
 	}
     function vetoSetGrandParameters(uint256 proposalID) public {
     	require(grandSettingProposal[proposalID].valid == true, "Invalid proposal"); 
