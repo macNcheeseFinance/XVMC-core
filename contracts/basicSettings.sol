@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts/utils/Context.sol";
@@ -10,76 +9,37 @@ import "./libs/custom/SafeERC20.sol";
 
 interface IXVMCgovernor {
     function costToVote() external returns (uint256);
-    function maximumVoteTokens() external returns (uint256);
+    function updateCostToVote(uint256 newCostToVote) external;
+    function updateDelayBeforeEnforce(uint256 newDelay) external; 
     function delayBeforeEnforce() external returns (uint256);
-    function eventFibonacceningActive() external returns (bool);
-    
-    function fibonacciDelayed() external returns (bool);
-    function delayFibonacci(bool _arg) external;
+    function updateDurationForCalculation(uint256 newDuration) external;
+    function setCallFee(address acPool, uint256 newCallFee) external;
+    function changeGovernorEnforced() external returns (bool);
     function eligibleNewGovernor() external returns (address);
-    function changeGovernorActivated() external returns (bool);
-    function setNewGovernor(address beneficiary) external;
-    function executeWithdraw(uint256 withdrawID) external;
-    function treasuryRequest(address _tokenAddr, address _recipient, uint256 _amountToSend) external;
-    function newGovernorRequestBlock() external returns (uint256);
-    function enforceGovernor() external;
-
+	function updateRolloverBonus(address _forPool, uint256 bonus) external;
     function acPool1() external view returns (address);
     function acPool2() external view returns (address);
     function acPool3() external view returns (address);
     function acPool4() external view returns (address);
     function acPool5() external view returns (address);
     function acPool6() external view returns (address);
-}
-
-interface IacPool {
-    function totalShares() external view returns (uint256);
-    function totalVotesForID(uint256 proposalID) external view returns (uint256);
-    function getPricePerFullShare() external view returns (uint256);
+	function maximumVoteTokens() external view returns (uint256);
+	function getTotalSupply() external view returns (uint256);
+    function setThresholdFibonaccening(uint256 newThreshold) external;
+    function updateGrandEventLength(uint256 _amount) external;
+    function updateDelayBetweenEvents(uint256 _amount) external;
 }
 
 interface IToken {
     function governor() external view returns (address);
 }
 
-contract XVMCconsensus is Ownable {
+//compile with optimization enabled(60runs)
+contract XVMCbasics is Ownable {
     using SafeERC20 for IERC20;
-	
-	struct HaltFibonacci {
-		bool valid;
-		bool enforced;
-		uint256 consensusVoteID;
-		uint256 startTimestamp;
-		uint256 delayInSeconds;
-	}
-    struct TreasuryTransfer {
-        bool valid;
-        uint256 firstCallTimestamp;
-        uint256 valueSacrificedForVote;
-		uint256 valueSacrificedAgainst;
-		uint256 delay;
-		address tokenAddress;
-        address beneficiary;
-		uint256 amountToSend;
-		uint256 consensusProposalID;
-    }
-	struct ConsensusVote {
-        uint16 typeOfChange; // 0 == governor change, 1 == treasury transfer, 2 == halt fibonaccening
-        address beneficiaryAddress; 
-		uint256 timestamp;
-    }
-	struct GovernorInvalidated {
-        bool isInvalidated; 
-        bool hasPassed;
-    }
 
-	HaltFibonacci[] public haltProposal;
-	TreasuryTransfer[] public treasuryProposal;
-	ConsensusVote[] public consensusProposal;
-	
-	uint256 public immutable goldenRatio = 1618; //1.618 is the golden ratio
     address public immutable token; //XVMC token (address)
-	
+    
     //addresses for time-locked deposits(autocompounding pools)
     address public acPool1;
     address public acPool2;
@@ -87,314 +47,553 @@ contract XVMCconsensus is Ownable {
     address public acPool4;
     address public acPool5;
     address public acPool6;
+    
+    struct ProposalStructure {
+        bool valid;
+        uint256 firstCallTimestamp;
+        uint256 valueSacrificedForVote;
+		uint256 valueSacrificedAgainst;
+		uint256 delay; //delay is basically time before users can vote against the proposal
+        uint256 proposedValue;
+    }
+    struct RolloverBonusStructure {
+        bool valid;
+        uint256 firstCallTimestamp;
+        uint256 valueSacrificedForVote;
+		uint256 valueSacrificedAgainst;
+		uint256 delay;
+        address poolAddress;
+        uint256 newBonus;
+    }
+    struct ParameterStructure {
+        bool valid;
+        uint256 firstCallTimestamp;
+        uint256 valueSacrificedForVote;
+		uint256 valueSacrificedAgainst;
+		uint256 delay; //delay is basically time before users can vote against the proposal
+        uint256 proposedValue1; // delay between events
+        uint256 proposedValue2; // duration when the print happens
+    }
+    
+    ProposalStructure[] public minDepositProposals;
+    ProposalStructure[] public delayProposals;
+    ProposalStructure[] public proposeDurationCalculation;
+	ProposalStructure[] public callFeeProposal;
+	RolloverBonusStructure[] public rolloverBonuses;
+	ProposalStructure[] public minThresholdFibonacceningProposal; 
+    ParameterStructure[] public grandSettingProposal;
+	
+	event ProposeMinDeposit(uint256 proposalID, uint256 valueSacrificedForVote, uint256 proposedMinDeposit, address enforcer, uint256 delay);
+    
+    event DelayBeforeEnforce(uint256 proposalID, uint256 valueSacrificedForVote, uint256 proposedMinDeposit, address enforcer, uint256 delay);
+    
+    event InitiateProposalDurationForCalculation(uint256 proposalID, uint256 duration, uint256 tokensSacrificedForVoting, address enforcer, uint256 delay);
+    
+    event InitiateSetCallFee(uint256 proposalID, uint256 depositingTokens, uint256 newCallFee, address enforcer, uint256 delay);
+    
+    event InitiateRolloverBonus(uint256 proposalID, uint256 depositingTokens, address forPool, uint256 newBonus, address enforcer, uint256 delay);
+	
+	event ProposeSetMinThresholdFibonaccening(uint256 proposalID, uint256 valueSacrificedForVote, uint256 proposedMinDeposit, address indexed enforcer, uint256 delay);
 
+    event ProposeSetGrandParameters(uint256 proposalID, uint256 valueSacrificedForVote, address indexed enforcer, uint256 delay, uint256 delayBetween, uint256 duration);
+    
+	
+	event AddVotes(uint256 _type, uint256 proposalID, address indexed voter, uint256 tokensSacrificed, bool _for);
+	event VetoProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
+	event ExecuteProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
 
-    mapping(address => GovernorInvalidated) public isGovInvalidated;
+    event ChangeGovernor(address newGovernor);
     
 	constructor(address _XVMC) {
-            consensusProposal.push(ConsensusVote(0, address(this), block.timestamp)); //0 is an invalid proposal(is default / neutral position)
-			token = _XVMC;
-    }
-    
-	
-	event ProposalAgainstCommonEnemy(uint256 HaltID, uint256 consensusProposalID, uint256 startTimestamp, uint256 delayInSeconds, address indexed enforcer);
-	event EnforceDelay(uint256 consensusProposalID, address indexed enforcer);
-	event RemoveDelay(uint256 consensusProposalID, address indexed enforcer);
-	
-	event TreasuryProposal(uint256 proposalID, uint256 sacrificedTokens, address tokenAddress, address recipient, uint256 amount, uint256 consensusVoteID, address indexed enforcer, uint256 delay);
-	event TreasuryProposalVeto(uint256 proposalID, address indexed enforcer);
-	event TreasuryProposalRequested(uint256 proposalID, address indexed enforcer);
-    
-    event ProposeGovernor(uint256 proposalID, address newGovernor, address indexed enforcer);
-    event ChangeGovernor(uint256 proposalID, address indexed enforcer, bool status);
-	
-	event AddVotes(uint256 _type, uint256 proposalID,  address indexed voter, uint256 tokensSacrificed, bool _for);
-    
-	
-	/*
-	* If XVMC is to be listed on margin trading exchanges
-	* As a lot of supply is printed during Fibonaccening events
-	* It could provide "free revenue" for traders shorting XVMC
-	* This is a mechanism meant to give XVMC holders an opportunity
-	* to unite against the common enemy(shorters).
-	* The function effectively delays the fibonaccening event
-	* Requires atleast 15% votes, with less than 50% voting against
-	*/
-	function uniteAgainstTheCommonEnemy(uint256 startTimestamp, uint256 delayInSeconds) external {
-		require(startTimestamp >= (block.timestamp + 3600) && delayInSeconds <= 72 * 3600); //no less than an hour before the event and can't last more than 3 days
-		
-		IERC20(token).safeTransferFrom(msg.sender, owner(), 50 * IXVMCgovernor(owner()).costToVote());
-		
-		uint256 _consensusID = consensusProposal.length;
-		
-		//need to create consensus proposal because the voting is done by voting for a proposal ID(inside pool contracts)
-		consensusProposal.push(
-		    ConsensusVote(2, address(this), block.timestamp)
-		    ); // vote for
-    	consensusProposal.push(
-    	    ConsensusVote(2, address(this), block.timestamp)
-    	    ); // vote against
-		
-		 haltProposal.push(
-    	    HaltFibonacci(true, false, _consensusID, startTimestamp, delayInSeconds)
-    	   );  
-	
-        emit ProposalAgainstCommonEnemy(haltProposal.length - 1, _consensusID, startTimestamp, delayInSeconds, msg.sender);
+		token = _XVMC;
 	}
-    function enforceDelay(uint256 fibonacciHaltID) external {
-		require(haltProposal[fibonacciHaltID].valid && !haltProposal[fibonacciHaltID].enforced &&
-		    haltProposal[fibonacciHaltID].startTimestamp <= block.timestamp &&
-		    block.timestamp < haltProposal[fibonacciHaltID].startTimestamp + haltProposal[fibonacciHaltID].delayInSeconds);
-		uint256 consensusID = haltProposal[fibonacciHaltID].consensusVoteID;
-
-        uint256 _tokensCasted = tokensCastedPerVote(consensusID);
-		 require(
-            _tokensCasted >= totalXVMCStaked() * 15 / 100,
-				"Atleast 15% of staked(weighted) tokens required"
-        );
-		
-        require(
-            tokensCastedPerVote(consensusID + 1) <= _tokensCasted / 2,
-				"More than 50% are voting against!"
-        );
-		
-		haltProposal[fibonacciHaltID].enforced = true;
-		IXVMCgovernor(owner()).delayFibonacci(true);
-		
-		emit EnforceDelay(consensusID, msg.sender);
-	}
-	function removeDelay(uint256 haltProposalID) external {
-		require(IXVMCgovernor(owner()).fibonacciDelayed() && haltProposal[haltProposalID].enforced && haltProposal[haltProposalID].valid);
-		require(block.timestamp >= haltProposal[haltProposalID].startTimestamp + haltProposal[haltProposalID].delayInSeconds, "not yet expired");
-		
-		haltProposal[haltProposalID].valid = false;
-		IXVMCgovernor(owner()).delayFibonacci(false);
-		
-		emit RemoveDelay(haltProposalID, msg.sender);
-	}	
-
-     /**
-     * Initiates a request to transfer tokens from the treasury wallet
-	 * Can be voted against during the "delay before enforce" period
-	 * For extra safety
-	 * Requires vote from long term stakers to enforce the transfer
-	 * Requires 25% of votes to pass
-	 * If only 5% of voters disagree, the proposal is rejected
-	 *
-	 * The possibilities here are endless
-	 *
-	 * Could act as a NFT marketplace too, could act as a treasury that pays "contractors",..
-	 * Since it's upgradeable, this can be added later on anyways....
-	 * Should probably make universal private function for Consensus Votes
-     */
-	function initiateTreasuryTransferProposal(uint256 depositingTokens,  address tokenAddress, address recipient, uint256 amountToSend, uint256 delay) external { 
-    	require(depositingTokens >= IXVMCgovernor(owner()).costToVote() * 10,
-    	    "atleast x10minCostToVote"
-    	    );
+    
+    /**
+     * Regulatory process for determining "IXVMCgovernor(owner()).IXVMCgovernor(owner()).costToVote()()"
+     * Anyone should be able to cast a vote
+     * Since all votes are deemed valid, unless rejected
+     * All votes must be manually reviewed
+     * minimum IXVMCgovernor(owner()).costToVote() prevents spam
+	 * Delay is the time during which you can vote in favor of the proposal(but can't veto/cancle it)
+	 * Proposal is submitted. During delay you can vote FOR the proposal. After delay expires the proposal
+	 * ... can be cancled(veto'd) if more tokens are commited against than in favor
+	 * If not cancled, the proposal can be enforced after (delay + delayBeforeEnforce) expires
+	 * ...under condition that more tokens have been sacrificed in favor rather than against
+    */
+    function initiateSetMinDeposit(uint256 depositingTokens, uint256 newMinDeposit, uint256 delay) external {
+		require(newMinDeposit <= IXVMCgovernor(owner()).maximumVoteTokens(), 'Maximum 0.01% of all tokens');
 		require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
     	
-    	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
+    	if (newMinDeposit < IXVMCgovernor(owner()).costToVote()) {
+    		require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "Minimum cost to vote not met");
+    		IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
+    	} else {
+    		require(depositingTokens >= newMinDeposit, "Must match new amount");
+    		IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens); 
+    	}
 		
-		uint256 _consensusID = consensusProposal.length + 1;
-		
-		consensusProposal.push(
-		    ConsensusVote(1, address(this), block.timestamp)
-		    ); // vote for
-    	consensusProposal.push(
-    	    ConsensusVote(1, address(this), block.timestamp)
-    	    ); // vote against
-		
-		 treasuryProposal.push(
-    	    TreasuryTransfer(true, block.timestamp, depositingTokens, 0, delay, tokenAddress, recipient, amountToSend, _consensusID)
-    	   );  
-		   
-        emit TreasuryProposal(
-            treasuryProposal.length - 1, depositingTokens, tokenAddress, recipient, amountToSend, _consensusID, msg.sender, delay
-            );
+		minDepositProposals.push(
+    		        ProposalStructure(true, block.timestamp, depositingTokens, 0, delay, newMinDeposit)
+    		   ); 
+    	
+    	emit ProposeMinDeposit(minDepositProposals.length - 1, depositingTokens, newMinDeposit, msg.sender, delay);
     }
-	//can only vote with tokens during the delay+delaybeforeenforce period(then this period ends, and to approve the transfer, must be voted through voting with locked shares)
-	function voteTreasuryTransferProposalY(uint256 proposalID, uint256 withTokens) external {
-		require(treasuryProposal[proposalID].valid, "invalid");
-		require(
-			treasuryProposal[proposalID].firstCallTimestamp + treasuryProposal[proposalID].delay + IXVMCgovernor(owner()).delayBeforeEnforce() > block.timestamp,
-			"can already be enforced"
-		);
+	function voteSetMinDepositY(uint256 proposalID, uint256 withTokens) external {
+		require(minDepositProposals[proposalID].valid, "invalid");
 		
 		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
-
-		treasuryProposal[proposalID].valueSacrificedForVote+= withTokens;
+		
+		minDepositProposals[proposalID].valueSacrificedForVote+= withTokens;
 
 		emit AddVotes(0, proposalID, msg.sender, withTokens, true);
 	}
-	function voteTreasuryTransferProposalN(uint256 proposalID, uint256 withTokens, bool withAction) external {
-		require(treasuryProposal[proposalID].valid, "invalid");
-		require(
-			treasuryProposal[proposalID].firstCallTimestamp + treasuryProposal[proposalID].delay + IXVMCgovernor(owner()).delayBeforeEnforce() > block.timestamp,
-			"can already be enforced"
-		);
+	function voteSetMinDepositN(uint256 proposalID, uint256 withTokens, bool withAction) external {
+		require(minDepositProposals[proposalID].valid, "invalid");
 		
 		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
 		
-		treasuryProposal[proposalID].valueSacrificedAgainst+= withTokens;
-		if(withAction) { vetoTreasuryTransferProposal(proposalID); }
+		minDepositProposals[proposalID].valueSacrificedAgainst+= withTokens;
+		if(withAction) { vetoSetMinDeposit(proposalID); }
 
 		emit AddVotes(0, proposalID, msg.sender, withTokens, false);
 	}
-    function vetoTreasuryTransferProposal(uint256 proposalID) public {
-        require(proposalID != 0, "Invalid proposal ID");
-    	require(treasuryProposal[proposalID].valid == true, "Proposal already invalid");
-		require(
-			treasuryProposal[proposalID].firstCallTimestamp + treasuryProposal[proposalID].delay + IXVMCgovernor(owner()).delayBeforeEnforce() >= block.timestamp,
-			"past the point of no return"
-		);
-    	require(treasuryProposal[proposalID].valueSacrificedForVote < treasuryProposal[proposalID].valueSacrificedAgainst, "needs more votes");
-		
-    	treasuryProposal[proposalID].valid = false;  
-		
-    	emit TreasuryProposalVeto(proposalID, msg.sender);
-    }
-    /*
-    * After delay+delayBeforeEnforce , the proposal effectively passes to be voted through consensus (token voting stops, voting with locked shares starts)
-	* Another delayBeforeEnforce period during which users can vote with locked shares
-    */
-	function approveTreasuryTransfer(uint256 proposalID) public {
-		require(proposalID != 0, "invalid proposal ID");
-		require(treasuryProposal[proposalID].valid, "Proposal already invalid");
-		uint256 consensusID = treasuryProposal[proposalID].consensusProposalID;
-		require(
-			treasuryProposal[proposalID].firstCallTimestamp + treasuryProposal[proposalID].delay + 2 * IXVMCgovernor(owner()).delayBeforeEnforce() <= block.timestamp,
-			"Enough time must pass before enforcing"
-		);
-		
-		uint256 _totalStaked = totalXVMCStaked();
-		if(treasuryProposal[proposalID].valueSacrificedForVote >= treasuryProposal[proposalID].valueSacrificedAgainst) {
-			uint256 _castedInFavor = tokensCastedPerVote(consensusID);
-			require(
-				_castedInFavor >= _totalStaked * 15 / 100,
-					"15% weigted vote required to approve the proposal"
-			);
-			
-			if(tokensCastedPerVote(consensusID+1) >= _castedInFavor * 33 / 100) { //just third of votes voting against kills the treasury withdrawal
-				treasuryProposal[proposalID].valid = false;
-			} else {
-				IXVMCgovernor(owner()).treasuryRequest(
-					treasuryProposal[proposalID].tokenAddress, treasuryProposal[proposalID].beneficiary, treasuryProposal[proposalID].amountToSend
-				   );
-				treasuryProposal[proposalID].valid = false;  
-				
-				emit TreasuryProposalRequested(proposalID, msg.sender);
-			}
-		} else {
-			treasuryProposal[proposalID].valid = false;  
-		
-			emit TreasuryProposalVeto(proposalID, msg.sender);
-		}
-	}
-	
-	 /**
-     * Kills treasury transfer proposal if more than 10% of weighted vote
-     */
-	function killTreasuryTransferProposal(uint256 proposalID) external {
-		require(!treasuryProposal[proposalID].valid, "Proposal already invalid");
-		uint256 consensusID = treasuryProposal[proposalID].consensusProposalID;
-		
-        require(
-            tokensCastedPerVote(consensusID+1) >= totalXVMCStaked() * 10 / 100,
-				"10% weigted vote (voting against) required to kill the proposal"
-        );
-		
-    	treasuryProposal[proposalID].valid = false;  
-		
-    	emit TreasuryProposalVeto(proposalID, msg.sender);
-	}
-	
-	
-    function proposeGovernor(address _newGovernor) external {
-        IERC20(token).safeTransferFrom(msg.sender, owner(), IXVMCgovernor(owner()).costToVote() * 100);
-		
-		consensusProposal.push(
-    	    ConsensusVote(0, _newGovernor, block.timestamp)
-    	    );
-    	consensusProposal.push(
-    	    ConsensusVote(0, _newGovernor, block.timestamp)
-    	    ); //even numbers are basically VETO (for voting against)
+    function vetoSetMinDeposit(uint256 proposalID) public {
+    	require(minDepositProposals[proposalID].valid == true, "Proposal already invalid");
+		require(minDepositProposals[proposalID].firstCallTimestamp + minDepositProposals[proposalID].delay < block.timestamp, "pending delay");
+		require(minDepositProposals[proposalID].valueSacrificedForVote < minDepositProposals[proposalID].valueSacrificedAgainst, "needs more votes");
+
+    	minDepositProposals[proposalID].valid = false;  
     	
-    	emit ProposeGovernor(consensusProposal.length - 2, _newGovernor, msg.sender);
+    	emit VetoProposal(0, proposalID, msg.sender);
     }
+    function executeSetMinDeposit(uint256 proposalID) public {
+    	require(
+    	    minDepositProposals[proposalID].valid &&
+    	    minDepositProposals[proposalID].firstCallTimestamp + minDepositProposals[proposalID].delay + IXVMCgovernor(owner()).delayBeforeEnforce() <= block.timestamp,
+    	    "Conditions not met"
+    	   );
+		   
+		 if(minDepositProposals[proposalID].valueSacrificedForVote >= minDepositProposals[proposalID].valueSacrificedAgainst) {
+			IXVMCgovernor(owner()).updateCostToVote(minDepositProposals[proposalID].proposedValue); 
+			minDepositProposals[proposalID].valid = false;
+			
+			emit ExecuteProposal(0, proposalID, msg.sender);
+		 } else {
+			 vetoSetMinDeposit(proposalID);
+		 }
+    }
+
     
     /**
-     * Atleast 33% of voters required
-     * with 75% agreement required to reach consensus
-	 * After proposing Governor, a period of time(delayBeforeEnforce) must pass 
-	 * During this time, the users can vote in favor(proposalID) or against(proposalID+1)
-	 * If voting succesfull, it can be submitted
-	 * And then there is a period of roughly 6 days(specified in governing contract) before the change can be enforced
-	 * During this time, users can still vote and reject change
-	 * Unless rejected, governing contract can be updated and changes enforced
-     */
-    function changeGovernor(uint256 proposalID) external { 
-		require(block.timestamp >= (consensusProposal[proposalID].timestamp + IXVMCgovernor(owner()).delayBeforeEnforce()), "Must wait delay before enforce");
-        require(!(isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated), " alreadyinvalidated");
-		require(consensusProposal.length > proposalID && proposalID % 2 == 1, "invalid proposal ID"); //can't be 0 either, but %2 solves that
-        require(!(IXVMCgovernor(owner()).changeGovernorActivated()));
-		require(consensusProposal[proposalID].typeOfChange == 0);
-
-        require(
-            tokensCastedPerVote(proposalID) >= totalXVMCStaked() * 33 / 100,
-				"Requires atleast 33% of staked(weighted) tokens"
-        );
-
-        //requires 75% agreement
-        if(tokensCastedPerVote(proposalID+1) >= tokensCastedPerVote(proposalID) / 4) {
-            
-                isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated = true;
-                
-				emit ChangeGovernor(proposalID, msg.sender, false);
-				
-            } else {
-                IXVMCgovernor(owner()).setNewGovernor(consensusProposal[proposalID].beneficiaryAddress);
-                
-                isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].hasPassed = true;
-                
-                emit ChangeGovernor(proposalID, msg.sender, true);
-            }
+     * Regulatory process for determining "delayBeforeEnforce"
+     * After a proposal is initiated, a period of time called
+     * delayBeforeEnforce must pass, before the proposal can be enforced
+     * During this period proposals can be vetod(voted against = rejected)
+    */
+    function initiateDelayBeforeEnforceProposal(uint256 depositingTokens, uint256 newDelay, uint256 delay) external { 
+    	require(newDelay >= 1 days && newDelay <= 14 days && delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "Minimum 1 day");
+    	
+    	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
+    	delayProposals.push(
+    	    ProposalStructure(true, block.timestamp, depositingTokens, 0, delay, newDelay)
+    	   );  
+		   
+        emit DelayBeforeEnforce(delayProposals.length - 1, depositingTokens, newDelay, msg.sender, delay);
     }
-    
-    /**
-     * After approved, still roughly 6 days to cancle the new governor, if less than 75% votes agree
-     */
-    function vetoGovernor(uint256 proposalID) external {
-        require(proposalID % 2 == 1, "Invalid proposal ID");
-        require(isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].hasPassed);
+	function voteDelayBeforeEnforceProposalY(uint256 proposalID, uint256 withTokens) external {
+		require(delayProposals[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
 
-        if(tokensCastedPerVote(proposalID+1) >= tokensCastedPerVote(proposalID) / 4) {
-              isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated = true;
-			  emit ChangeGovernor(proposalID, msg.sender, false);
-        }
-    }
-	//even if not approved, can be cancled at any time if 20% of weighted votes go AGAINST
-    function vetoGovernor2(uint256 proposalID) external {
-        require(proposalID % 2 == 1, "Invalid proposal ID");
+		delayProposals[proposalID].valueSacrificedForVote+= withTokens;
 
-        if(tokensCastedPerVote(proposalID+1) >= totalXVMCStaked() * 25 / 100) { //25% of weighted total vote AGAINST kills the proposal as well
-              isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated = true;
-			  emit ChangeGovernor(proposalID, msg.sender, false);
-        }
+		emit AddVotes(1, proposalID, msg.sender, withTokens, true);
+	}
+	function voteDelayBeforeEnforceProposalN(uint256 proposalID, uint256 withTokens, bool withAction) external {
+		require(delayProposals[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+		
+		delayProposals[proposalID].valueSacrificedAgainst+= withTokens;
+		if(withAction) { vetoDelayBeforeEnforceProposal(proposalID); }
+
+		emit AddVotes(1, proposalID, msg.sender, withTokens, false);
+	}
+    function vetoDelayBeforeEnforceProposal(uint256 proposalID) public {
+    	require(delayProposals[proposalID].valid == true, "Proposal already invalid");
+		require(delayProposals[proposalID].firstCallTimestamp + delayProposals[proposalID].delay < block.timestamp, "pending delay");
+		require(delayProposals[proposalID].valueSacrificedForVote < delayProposals[proposalID].valueSacrificedAgainst, "needs more votes");
+    	
+    	delayProposals[proposalID].valid = false;  
+		
+    	emit VetoProposal(1, proposalID, msg.sender);
     }
-    function enforceGovernor(uint256 proposalID) external {
-        require(proposalID % 2 == 1, "invalid proposal ID"); //proposal ID = 0 is neutral position and not allowed(%2 applies)
-        require(!isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated, "invalid");
+    function executeDelayBeforeEnforceProposal(uint256 proposalID) public {
+    	require(
+    	    delayProposals[proposalID].valid == true &&
+    	    delayProposals[proposalID].firstCallTimestamp + IXVMCgovernor(owner()).delayBeforeEnforce() + delayProposals[proposalID].delay < block.timestamp,
+    	    "Conditions not met"
+    	    );
         
-        require(consensusProposal[proposalID].beneficiaryAddress == IXVMCgovernor(owner()).eligibleNewGovernor());
-      
-	  	IXVMCgovernor(owner()).enforceGovernor();
-	  
-        isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated = true;
+		if(delayProposals[proposalID].valueSacrificedForVote >= delayProposals[proposalID].valueSacrificedAgainst) {
+			IXVMCgovernor(owner()).updateDelayBeforeEnforce(delayProposals[proposalID].proposedValue); 
+			delayProposals[proposalID].valid = false;
+			
+			emit ExecuteProposal(1, proposalID, msg.sender);
+		} else {
+			vetoDelayBeforeEnforceProposal(proposalID);
+		}
+    }
+    
+  /**
+     * Regulatory process for determining "durationForCalculation"
+     * Not of great Use (no use until the "grand fibonaccening
+     * Bitcoin difficulty adjusts to create new blocks every 10minutes
+     * Our inflation is tied to the block production of Polygon network
+     * In case the average block time changes significantly on the Polygon network  
+     * the durationForCalculation is a period that we use to calculate 
+     * average block time and consequentially use it to rebalance inflation
+    */
+    function initiateProposalDurationForCalculation(uint256 depositingTokens, uint256 duration, uint256 delay) external {
+		require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");		
+    	require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "minimum cost to vote");
+		require(duration <= 7 * 24 * 3600, "less than 7 days");
+    
+    	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
+    	proposeDurationCalculation.push(
+    	    ProposalStructure(true, block.timestamp, depositingTokens, 0, delay, duration)
+    	    );  
+    	    
+        emit InitiateProposalDurationForCalculation(proposeDurationCalculation.length - 1, duration,  depositingTokens, msg.sender, delay);
+    }
+	function voteProposalDurationForCalculationY(uint256 proposalID, uint256 withTokens) external {
+		require(proposeDurationCalculation[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+
+		proposeDurationCalculation[proposalID].valueSacrificedForVote+= withTokens;
+
+		emit AddVotes(2, proposalID, msg.sender, withTokens, true);
+	}
+	function voteProposalDurationForCalculationN(uint256 proposalID, uint256 withTokens, bool withAction) external {
+		require(proposeDurationCalculation[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+
+		proposeDurationCalculation[proposalID].valueSacrificedAgainst+= withTokens;
+		if(withAction) { vetoProposalDurationForCalculation(proposalID); }
+
+		emit AddVotes(2, proposalID, msg.sender, withTokens, false);
+	}
+    function vetoProposalDurationForCalculation(uint256 proposalID) public {
+    	require(proposeDurationCalculation[proposalID].valid, "already invalid"); 
+		require(proposeDurationCalculation[proposalID].firstCallTimestamp + proposeDurationCalculation[proposalID].delay < block.timestamp, "pending delay");
+		require(proposeDurationCalculation[proposalID].valueSacrificedForVote < proposeDurationCalculation[proposalID].valueSacrificedAgainst, "needs more votes");
+
+    	proposeDurationCalculation[proposalID].valid = false;  
+    	
+    	emit VetoProposal(2, proposalID, msg.sender);
     }
 
-    /**
-     * Updates pool addresses and token addresses from the governor
+    function executeProposalDurationForCalculation(uint256 proposalID) public {
+    	require(
+    	    proposeDurationCalculation[proposalID].valid &&
+    	    proposeDurationCalculation[proposalID].firstCallTimestamp + IXVMCgovernor(owner()).delayBeforeEnforce() + proposeDurationCalculation[proposalID].delay < block.timestamp,
+    	    "conditions not met"
+    	);
+		if(proposeDurationCalculation[proposalID].valueSacrificedForVote >= proposeDurationCalculation[proposalID].valueSacrificedAgainst) {
+			IXVMCgovernor(owner()).updateDurationForCalculation(proposeDurationCalculation[proposalID].proposedValue); 
+			proposeDurationCalculation[proposalID].valid = false; 
+			
+			emit ExecuteProposal(2, proposalID, msg.sender);
+		} else {
+			vetoProposalDurationForCalculation(proposalID);
+		}
+    }
+    
+  /**
+     * Regulatory process for setting rollover bonuses
+    */
+    function initiateProposalRolloverBonus(uint256 depositingTokens, address _forPoolAddress, uint256 _newBonus, uint256 delay) external { 
+		require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
+    	require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "minimum cost to vote");
+		require(_newBonus <= 2000, "bonus too high");
+    
+    	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
+    	rolloverBonuses.push(
+    	    RolloverBonusStructure(true, block.timestamp, depositingTokens, 0, delay, _forPoolAddress, _newBonus)
+    	    );  
+    	    
+        emit InitiateRolloverBonus(rolloverBonuses.length - 1, depositingTokens, _forPoolAddress, _newBonus, msg.sender, delay);
+    }
+	function voteProposalRolloverBonusY(uint256 proposalID, uint256 withTokens) external {
+		require(rolloverBonuses[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+
+		rolloverBonuses[proposalID].valueSacrificedForVote+= withTokens;
+
+		emit AddVotes(3, proposalID, msg.sender, withTokens, true);
+	}
+	function voteProposalRolloverBonusN(uint256 proposalID, uint256 withTokens, bool withAction) external {
+		require(rolloverBonuses[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+
+		rolloverBonuses[proposalID].valueSacrificedAgainst+= withTokens;
+		if(withAction) { vetoProposalRolloverBonus(proposalID); }
+
+		emit AddVotes(3, proposalID, msg.sender, withTokens, false);
+	}
+    function vetoProposalRolloverBonus(uint256 proposalID) public {
+    	require(rolloverBonuses[proposalID].valid, "already invalid"); 
+		require(rolloverBonuses[proposalID].firstCallTimestamp + rolloverBonuses[proposalID].delay < block.timestamp, "pending delay");
+		require(rolloverBonuses[proposalID].valueSacrificedForVote < rolloverBonuses[proposalID].valueSacrificedAgainst, "needs more votes");
+ 
+    	rolloverBonuses[proposalID].valid = false;  
+    	
+    	emit VetoProposal(3, proposalID, msg.sender);
+    }
+
+    function executeProposalRolloverBonus(uint256 proposalID) public {
+    	require(
+    	    rolloverBonuses[proposalID].valid &&
+    	    rolloverBonuses[proposalID].firstCallTimestamp + IXVMCgovernor(owner()).delayBeforeEnforce() + rolloverBonuses[proposalID].delay < block.timestamp,
+    	    "conditions not met"
+    	);
+        
+		if(rolloverBonuses[proposalID].valueSacrificedForVote >= rolloverBonuses[proposalID].valueSacrificedAgainst) {
+			IXVMCgovernor(owner()).updateRolloverBonus(rolloverBonuses[proposalID].poolAddress, rolloverBonuses[proposalID].newBonus); 
+			rolloverBonuses[proposalID].valid = false; 
+			
+			emit ExecuteProposal(3, proposalID, msg.sender);
+		} else {
+			vetoProposalRolloverBonus(proposalID);
+		}
+    }
+    
+    
+	 /**
+     * The auto-compounding effect is achieved with the help of the users that initiate the
+     * transaction and pay the gas fee for re-investing earnings into the Masterchef
+     * The call fee is paid as a reward to the user
+     * This is handled in the auto-compounding contract
+     * 
+     * This is a process to change the Call fee(the reward) in the autocompounding contracts
+     * This contract is an admin for the autocompound contract
      */
+    function initiateSetCallFee(uint256 depositingTokens, uint256 newCallFee, uint256 delay) external { 
+    	require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "below minimum cost to vote");
+    	require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
+    	require(newCallFee <= 1000);
+    
+    	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
+    	callFeeProposal.push(
+    	    ProposalStructure(true, block.timestamp, depositingTokens, 0, delay, newCallFee)
+    	   );
+    	   
+        emit InitiateSetCallFee(callFeeProposal.length - 1, depositingTokens, newCallFee, msg.sender, delay);
+    }
+	function voteSetCallFeeY(uint256 proposalID, uint256 withTokens) external {
+		require(callFeeProposal[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+
+		callFeeProposal[proposalID].valueSacrificedForVote+= withTokens;
+
+		emit AddVotes(4, proposalID, msg.sender, withTokens, true);
+	}
+	function voteSetCallFeeN(uint256 proposalID, uint256 withTokens, bool withAction) external {
+		require(callFeeProposal[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+		
+		callFeeProposal[proposalID].valueSacrificedAgainst+= withTokens;
+		if(withAction) { vetoSetCallFee(proposalID); }
+
+		emit AddVotes(4, proposalID, msg.sender, withTokens, false);
+	}
+    function vetoSetCallFee(uint256 proposalID) public {
+    	require(callFeeProposal[proposalID].valid == true, "Proposal already invalid");
+		require(callFeeProposal[proposalID].firstCallTimestamp + callFeeProposal[proposalID].delay < block.timestamp, "pending delay");
+		require(callFeeProposal[proposalID].valueSacrificedForVote < callFeeProposal[proposalID].valueSacrificedAgainst, "needs more votes");
+
+    	callFeeProposal[proposalID].valid = false;
+    	
+    	emit VetoProposal(4, proposalID, msg.sender);
+    }
+    function executeSetCallFee(uint256 proposalID) public {
+    	require(
+    	    callFeeProposal[proposalID].valid && 
+    	    callFeeProposal[proposalID].firstCallTimestamp + IXVMCgovernor(owner()).delayBeforeEnforce() + callFeeProposal[proposalID].delay < block.timestamp,
+    	    "Conditions not met"
+    	   );
+        
+		if(callFeeProposal[proposalID].valueSacrificedForVote >= callFeeProposal[proposalID].valueSacrificedAgainst) {
+
+			IXVMCgovernor(owner()).setCallFee(acPool1, callFeeProposal[proposalID].proposedValue);
+			IXVMCgovernor(owner()).setCallFee(acPool2, callFeeProposal[proposalID].proposedValue);
+			IXVMCgovernor(owner()).setCallFee(acPool3, callFeeProposal[proposalID].proposedValue);
+			IXVMCgovernor(owner()).setCallFee(acPool4, callFeeProposal[proposalID].proposedValue);
+			IXVMCgovernor(owner()).setCallFee(acPool5, callFeeProposal[proposalID].proposedValue);
+			IXVMCgovernor(owner()).setCallFee(acPool6, callFeeProposal[proposalID].proposedValue);
+			
+			callFeeProposal[proposalID].valid = false;
+			
+			emit ExecuteProposal(4, proposalID, msg.sender);
+		} else {
+			vetoSetCallFee(proposalID);
+		}
+    }
+	
+    /**
+     * Regulatory process for determining fibonaccening threshold,
+     * which is the minimum amount of tokens required to be collected,
+     * before a "fibonaccening" event can be scheduled;
+     * 
+     * Bitcoin has "halvening" events every 4 years where block rewards reduce in half
+     * XVMC has "fibonaccening" events, which can can be scheduled once
+     * this smart contract collects the minimum(threshold) of tokens. 
+     * 
+     * Tokens are collected as penalties from premature withdrawals, as well as voting costs inside this contract
+     *
+     * It's basically a mechanism to re-distribute the penalties(though the rewards can exceed the collected penalties)
+     * 
+     * It's meant to serve as a volatility-inducing event that attracts new users with high rewards
+     * 
+     * Effectively, the rewards are increased for a short period of time. 
+     * Once the event expires, the tokens collected from penalties are
+     * burned to give a sense of deflation AND the global inflation
+     * for XVMC is reduced by a Golden ratio
+    */
+    function proposeSetMinThresholdFibonaccening(uint256 depositingTokens, uint256 newMinimum, uint256 delay) external {
+        require(newMinimum >= IXVMCgovernor(owner()).getTotalSupply() / 1000, "Min 0.1% of supply");
+        require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "Costs to vote");
+        require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
+        
+    	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
+    	minThresholdFibonacceningProposal.push(
+    	    ProposalStructure(true, block.timestamp, depositingTokens, 0, delay, newMinimum)
+    	    );
+		
+    	emit ProposeSetMinThresholdFibonaccening(
+    	    minThresholdFibonacceningProposal.length - 1, depositingTokens, newMinimum, msg.sender, delay
+    	   );
+    }
+	function voteSetMinThresholdFibonacceningY(uint256 proposalID, uint256 withTokens) external {
+		require(minThresholdFibonacceningProposal[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+		
+		minThresholdFibonacceningProposal[proposalID].valueSacrificedForVote+= withTokens;
+			
+		emit AddVotes(5, proposalID, msg.sender, withTokens, true);
+	}
+	function voteSetMinThresholdFibonacceningN(uint256 proposalID, uint256 withTokens, bool withAction) external {
+		require(minThresholdFibonacceningProposal[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+
+		minThresholdFibonacceningProposal[proposalID].valueSacrificedAgainst+= withTokens;
+		if(withAction) { vetoSetMinThresholdFibonaccening(proposalID); }
+
+		emit AddVotes(5, proposalID, msg.sender, withTokens, false);
+	}
+    function vetoSetMinThresholdFibonaccening(uint256 proposalID) public {
+    	require(minThresholdFibonacceningProposal[proposalID].valid == true, "Invalid proposal"); 
+		require(minThresholdFibonacceningProposal[proposalID].firstCallTimestamp + minThresholdFibonacceningProposal[proposalID].delay <= block.timestamp, "pending delay");
+		require(minThresholdFibonacceningProposal[proposalID].valueSacrificedForVote < minThresholdFibonacceningProposal[proposalID].valueSacrificedAgainst, "needs more votes");
+
+    	minThresholdFibonacceningProposal[proposalID].valid = false;
+    	
+    	emit VetoProposal(5, proposalID, msg.sender);
+    }
+    function executeSetMinThresholdFibonaccening(uint256 proposalID) public {
+    	require(
+    	    minThresholdFibonacceningProposal[proposalID].valid == true &&
+    	    minThresholdFibonacceningProposal[proposalID].firstCallTimestamp + IXVMCgovernor(owner()).delayBeforeEnforce() + minThresholdFibonacceningProposal[proposalID].delay < block.timestamp,
+    	    "conditions not met"
+        );
+    	
+		if(minThresholdFibonacceningProposal[proposalID].valueSacrificedForVote >= minThresholdFibonacceningProposal[proposalID].valueSacrificedAgainst) {
+			IXVMCgovernor(owner()).setThresholdFibonaccening(minThresholdFibonacceningProposal[proposalID].proposedValue);
+			minThresholdFibonacceningProposal[proposalID].valid = false; 
+			
+			emit ExecuteProposal(5, proposalID, msg.sender);
+		} else {
+			vetoSetMinThresholdFibonaccening(proposalID);
+		}
+    }
+
+    //proposal to set delay between events and duration during which the tokens are printed
+    //this is only to be used for "the grand fibonaccening"... Won't happen for some time
+    function proposeSetGrandParameters(uint256 depositingTokens, uint256 delay, uint256 _delayBetween, uint256 _duration) external {
+        require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "Costs to vote");
+        require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
+        require(_delayBetween > 24*3600 && _delayBetween <= 7*24*3600, "not within range limits");
+        require(_duration > 3600 && _duration < 14*24*3600, "not within range limits");
+        
+    	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
+    	grandSettingProposal.push(
+    	    ParameterStructure(true, block.timestamp, depositingTokens, 0, delay, _delayBetween, _duration)
+    	    );
+		
+    	emit ProposeSetGrandParameters(
+    	    grandSettingProposal.length - 1, depositingTokens, msg.sender, delay, _delayBetween, _duration
+    	   );
+    }
+	function voteSetGrandParametersY(uint256 proposalID, uint256 withTokens) external {
+		require(grandSettingProposal[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+		
+		grandSettingProposal[proposalID].valueSacrificedForVote+= withTokens;
+			
+		emit AddVotes(6, proposalID, msg.sender, withTokens, true);
+	}
+	function voteSetGrandParametersN(uint256 proposalID, uint256 withTokens, bool withAction) external {
+		require(grandSettingProposal[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+
+		grandSettingProposal[proposalID].valueSacrificedAgainst+= withTokens;
+		if(withAction) { vetoSetGrandParameters(proposalID); }
+
+		emit AddVotes(6, proposalID, msg.sender, withTokens, false);
+	}
+    function vetoSetGrandParameters(uint256 proposalID) public {
+    	require(grandSettingProposal[proposalID].valid == true, "Invalid proposal"); 
+		require(grandSettingProposal[proposalID].firstCallTimestamp + grandSettingProposal[proposalID].delay <= block.timestamp, "pending delay");
+		require(grandSettingProposal[proposalID].valueSacrificedForVote < grandSettingProposal[proposalID].valueSacrificedAgainst, "needs more votes");
+
+    	grandSettingProposal[proposalID].valid = false;
+    	
+    	emit VetoProposal(6, proposalID, msg.sender);
+    }
+    function executeSetGrandParameters(uint256 proposalID) public {
+    	require(
+    	    grandSettingProposal[proposalID].valid == true &&
+    	    grandSettingProposal[proposalID].firstCallTimestamp + IXVMCgovernor(owner()).delayBeforeEnforce() + grandSettingProposal[proposalID].delay < block.timestamp,
+    	    "conditions not met"
+        );	
+    	
+		if(grandSettingProposal[proposalID].valueSacrificedForVote >= grandSettingProposal[proposalID].valueSacrificedAgainst) {
+			IXVMCgovernor(owner()).updateDelayBetweenEvents(grandSettingProposal[proposalID].proposedValue1); //delay
+            IXVMCgovernor(owner()).updateGrandEventLength(grandSettingProposal[proposalID].proposedValue2); //duration
+			grandSettingProposal[proposalID].valid = false; 
+			
+			emit ExecuteProposal(6, proposalID, msg.sender);
+		} else {
+			vetoSetGrandParameters(proposalID);
+		}
+    }
+
+    //transfers ownership of this contract to new governor
+    //masterchef is the token owner, governor is the owner of masterchef
+    function changeGovernor() external {
+		_transferOwnership(IToken(token).governor());
+    }
+
     function updatePools() external {
         acPool1 = IXVMCgovernor(owner()).acPool1();
         acPool2 = IXVMCgovernor(owner()).acPool2();
@@ -403,37 +602,5 @@ contract XVMCconsensus is Ownable {
         acPool5 = IXVMCgovernor(owner()).acPool5();
         acPool6 = IXVMCgovernor(owner()).acPool6();
     }
-   
-    
-    //transfers ownership of this contract to new governor
-    //masterchef is the token owner, governor is the owner of masterchef
-    function changeGovernor() external {
-		_transferOwnership(IToken(token).governor());
-    }
 
-    /**
-     * Returns total XVMC staked accross all pools.
-     */
-    function totalXVMCStaked() public view returns(uint256) {
-    	return IERC20(token).balanceOf(acPool1) + IERC20(token).balanceOf(acPool2) + IERC20(token).balanceOf(acPool3) +
-                 IERC20(token).balanceOf(acPool4) + IERC20(token).balanceOf(acPool5) + IERC20(token).balanceOf(acPool6);
-    }
-
-    /**
-     * Gets XVMC allocated per vote with ID for each pool
-     * Process:
-     * Gets votes for ID and calculates XVMC equivalent
-     * ...and assigns weights to votes
-     * Pool1(20%), Pool2(30%), Pool3(50%), Pool4(75%), Pool5(115%), Pool6(150%)
-     */
-    function tokensCastedPerVote(uint256 _forID) public view returns(uint256) {
-        return (
-            IacPool(acPool1).totalVotesForID(_forID) * IacPool(acPool1).getPricePerFullShare() / 1e19 * 2 + 
-                IacPool(acPool2).totalVotesForID(_forID) * IacPool(acPool2).getPricePerFullShare() / 1e19 * 3 +
-                    IacPool(acPool3).totalVotesForID(_forID) * IacPool(acPool3).getPricePerFullShare() / 1e19 * 5 +
-                        IacPool(acPool4).totalVotesForID(_forID) * IacPool(acPool4).getPricePerFullShare() / 1e20 * 75 +
-                            IacPool(acPool5).totalVotesForID(_forID) * IacPool(acPool5).getPricePerFullShare() / 1e20 * 115 +
-                                IacPool(acPool6).totalVotesForID(_forID) * IacPool(acPool6).getPricePerFullShare() / 1e19 * 15
-        );
-    }
 }
