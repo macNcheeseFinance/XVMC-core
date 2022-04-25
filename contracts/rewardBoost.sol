@@ -115,7 +115,7 @@ contract XVMCfibonaccening is Ownable {
     
     event InitiateProposeGrandFibonaccening(uint256 proposalID, uint256 depositingTokens, uint256 eventDate, uint256 finalSupply, address indexed enforcer, uint256 delay);
 	
-	event AddVotes(uint256 _type, address indexed voter, uint256 tokensSacrificed, bool _for);
+	event AddVotes(uint256 _type, uint256 proposalID, address indexed voter, uint256 tokensSacrificed, bool _for);
 	event VetoProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
 	event ExecuteProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
     
@@ -163,7 +163,7 @@ contract XVMCfibonaccening is Ownable {
 
 		fibonacceningProposals[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(0, msg.sender, withTokens, true);
+		emit AddVotes(0, proposalID, msg.sender, withTokens, true);
 	}
 	function voteFibonacceningN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(fibonacceningProposals[proposalID].valid, "invalid");
@@ -174,7 +174,7 @@ contract XVMCfibonaccening is Ownable {
 		fibonacceningProposals[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoFibonaccening(proposalID); }
 		
-		emit AddVotes(0, msg.sender, withTokens, false);
+		emit AddVotes(0, proposalID, msg.sender, withTokens, false);
 	}
     function vetoFibonaccening(uint256 proposalID) public {
     	require(fibonacceningProposals[proposalID].valid == true, "Invalid proposal"); 
@@ -335,7 +335,7 @@ contract XVMCfibonaccening is Ownable {
 
 		grandFibonacceningProposals[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(1, msg.sender, withTokens, true);
+		emit AddVotes(1, proposalID, msg.sender, withTokens, true);
 	}
 	function voteGrandFibonacceningN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(grandFibonacceningProposals[proposalID].valid, "invalid");
@@ -346,7 +346,7 @@ contract XVMCfibonaccening is Ownable {
 		grandFibonacceningProposals[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoProposeGrandFibonaccening(proposalID); }
 
-		emit AddVotes(1, msg.sender, withTokens, false);
+		emit AddVotes(1, proposalID, msg.sender, withTokens, false);
 	}
 	/*
 	* can be vetto'd during delayBeforeEnforce period.
