@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity 0.8.0;
@@ -29,15 +30,18 @@ interface IGovernor {
     function basicContract() external view returns (address);
     function treasuryWallet() external view returns (address);
     function nftWallet() external view returns (address);
+    function oldChefOwner() external returns (address);
 }
 
 interface IChange {
     function changeGovernor() external;
     function updatePools() external;
+    function setAdmin() external;
 }
 
 interface IDummy {
     function updateOwnerToGovernor() external;
+    function updateOwner() external;
 }
 
 contract XVMCsyncContracts {
@@ -61,6 +65,7 @@ contract XVMCsyncContracts {
         updateWalletsOwner();
         updatePoolsInSideContracts();
         updateDummysOwner(false);
+        updateOldChef(true);
     }
 
     function updatePools() public {
@@ -118,5 +123,16 @@ contract XVMCsyncContracts {
         IDummy(address(IacPool(acPool5).dummyToken())).updateOwnerToGovernor();
         IDummy(address(IacPool(acPool6).dummyToken())).updateOwnerToGovernor();
     }
-
+    
+    function updateOldChef(bool _dummyToken) public {
+        address governor = IToken(tokenXVMC).governor();
+        address _oldChefOwner = IGovernor(governor).oldChefOwner();
+        
+        if(_dummyToken) { 
+            address _oldChefDummy = address(IacPool(_oldChefOwner).dummyToken());
+            IDummy(_oldChefDummy).updateOwner();
+        }
+        
+        IChange(_oldChefOwner).setAdmin();
+    }
 }
