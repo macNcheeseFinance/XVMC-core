@@ -108,7 +108,7 @@ contract XVMCconsensus is Ownable {
     event ProposeGovernor(uint256 proposalID, address newGovernor, address indexed enforcer);
     event ChangeGovernor(uint256 proposalID, address indexed enforcer, bool status);
 	
-	event AddVotes(uint256 _type, address indexed voter, uint256 tokensSacrificed, bool _for);
+	event AddVotes(uint256 _type, uint256 proposalID,  address indexed voter, uint256 tokensSacrificed, bool _for);
     
 	
 	/*
@@ -224,7 +224,7 @@ contract XVMCconsensus is Ownable {
 
 		treasuryProposal[proposalID].valueSacrificedForVote+= withTokens;
 
-		emit AddVotes(0, msg.sender, withTokens, true);
+		emit AddVotes(0, proposalID, msg.sender, withTokens, true);
 	}
 	function voteTreasuryTransferProposalN(uint256 proposalID, uint256 withTokens, bool withAction) external {
 		require(treasuryProposal[proposalID].valid, "invalid");
@@ -238,7 +238,7 @@ contract XVMCconsensus is Ownable {
 		treasuryProposal[proposalID].valueSacrificedAgainst+= withTokens;
 		if(withAction) { vetoTreasuryTransferProposal(proposalID); }
 
-		emit AddVotes(0, msg.sender, withTokens, false);
+		emit AddVotes(0, proposalID, msg.sender, withTokens, false);
 	}
     function vetoTreasuryTransferProposal(uint256 proposalID) public {
         require(proposalID != 0, "Invalid proposal ID");
