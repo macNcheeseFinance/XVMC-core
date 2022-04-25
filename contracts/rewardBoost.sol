@@ -23,12 +23,6 @@ interface IXVMCgovernor {
     function blocks100PerSecond() external returns (uint256);
     function changeGovernorEnforced() external returns (bool);
     function eligibleNewGovernor() external returns (address);
-    function acPool1() external returns (address);
-    function acPool2() external returns (address);
-    function acPool3() external returns (address);
-    function acPool4() external returns (address);
-    function acPool5() external returns (address);
-    function acPool6() external returns (address);
 	function burnFromOldChef(uint256 _amount) external;
 	function setActivateFibonaccening(bool _arg) external;
 	function isInflationStatic() external returns (bool);
@@ -93,14 +87,6 @@ contract XVMCfibonaccening is Ownable {
     //masterchef address
     address public masterchef;
     
-    //addresses for time-locked deposits(autocompounding pools)
-    address public acPool1;
-    address public acPool2;
-    address public acPool3;
-    address public acPool4;
-    address public acPool5;
-    address public acPool6;
-    
     uint256 public lastCallFibonaccening; //stores timestamp of last grand fibonaccening event
     
     bool public eligibleGrandFibonaccening; // when big event is ready
@@ -139,18 +125,6 @@ contract XVMCfibonaccening is Ownable {
 		token = _XVMC;
 		masterchef = _masterchef;
 	}
-    
-    /*
-    * Syncs pools from governor
-    */
-    function updatePools() external {
-        acPool1 = IXVMCgovernor(owner()).acPool1();
-        acPool2 = IXVMCgovernor(owner()).acPool2();
-        acPool3 = IXVMCgovernor(owner()).acPool3();
-        acPool4 = IXVMCgovernor(owner()).acPool4();
-        acPool5 = IXVMCgovernor(owner()).acPool5();
-        acPool6 = IXVMCgovernor(owner()).acPool6();
-    }
     
     
     /**
