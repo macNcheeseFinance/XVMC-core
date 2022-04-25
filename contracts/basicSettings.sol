@@ -34,7 +34,7 @@ interface IToken {
     function governor() external view returns (address);
 }
 
-//compile with optimization enabled(185runs)
+//compile with optimization enabled(60runs)
 contract XVMCbasics is Ownable {
     using SafeERC20 for IERC20;
 
