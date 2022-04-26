@@ -102,8 +102,7 @@ contract XVMCconsensus is Ownable {
 	event RemoveDelay(uint256 consensusProposalID, address indexed enforcer);
 	
 	event TreasuryProposal(uint256 proposalID, uint256 sacrificedTokens, address tokenAddress, address recipient, uint256 amount, uint256 consensusVoteID, address indexed enforcer, uint256 delay);
-	event TreasuryProposalVeto(uint256 proposalID, address indexed enforcer);
-	event TreasuryProposalRequested(uint256 proposalID, address indexed enforcer);
+	event TreasuryEnforce(uint256 proposalID, address indexed enforcer, bool isSuccess);
     
     event ProposeGovernor(uint256 proposalID, address newGovernor, address indexed enforcer);
     event ChangeGovernor(uint256 proposalID, address indexed enforcer, bool status);
@@ -251,7 +250,7 @@ contract XVMCconsensus is Ownable {
 		
     	treasuryProposal[proposalID].valid = false;  
 		
-    	emit TreasuryProposalVeto(proposalID, msg.sender);
+    	emit TreasuryEnforce(proposalID, msg.sender, false);
     }
     /*
     * After delay+delayBeforeEnforce , the proposal effectively passes to be voted through consensus (token voting stops, voting with locked shares starts)
@@ -282,12 +281,12 @@ contract XVMCconsensus is Ownable {
 				   );
 				treasuryProposal[proposalID].valid = false;  
 				
-				emit TreasuryProposalRequested(proposalID, msg.sender);
+				emit TreasuryEnforce(proposalID, msg.sender, true);
 			}
 		} else {
 			treasuryProposal[proposalID].valid = false;  
 		
-			emit TreasuryProposalVeto(proposalID, msg.sender);
+			emit TreasuryEnforce(proposalID, msg.sender, false);
 		}
 	}
 	
@@ -305,7 +304,7 @@ contract XVMCconsensus is Ownable {
 		
     	treasuryProposal[proposalID].valid = false;  
 		
-    	emit TreasuryProposalVeto(proposalID, msg.sender);
+    	emit TreasuryEnforce(proposalID, msg.sender, false);
 	}
 	
 	
