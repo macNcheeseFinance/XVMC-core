@@ -99,8 +99,7 @@ contract XVMCbasics is Ownable {
     
 	
 	event AddVotes(uint256 _type, uint256 proposalID, address indexed voter, uint256 tokensSacrificed, bool _for);
-	event VetoProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
-	event ExecuteProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
+	event EnforceProposal(uint256 _type, uint256 proposalID, address indexed enforcer, bool isSuccess);
 
     event ChangeGovernor(address newGovernor);
     
@@ -164,7 +163,7 @@ contract XVMCbasics is Ownable {
 
     	minDepositProposals[proposalID].valid = false;  
     	
-    	emit VetoProposal(0, proposalID, msg.sender);
+    	emit EnforceProposal(0, proposalID, msg.sender, false);
     }
     function executeSetMinDeposit(uint256 proposalID) public {
     	require(
@@ -177,7 +176,7 @@ contract XVMCbasics is Ownable {
 			IXVMCgovernor(owner()).updateCostToVote(minDepositProposals[proposalID].proposedValue); 
 			minDepositProposals[proposalID].valid = false;
 			
-			emit ExecuteProposal(0, proposalID, msg.sender);
+			emit EnforceProposal(0, proposalID, msg.sender, true);
 		 } else {
 			 vetoSetMinDeposit(proposalID);
 		 }
@@ -226,7 +225,7 @@ contract XVMCbasics is Ownable {
     	
     	delayProposals[proposalID].valid = false;  
 		
-    	emit VetoProposal(1, proposalID, msg.sender);
+    	emit EnforceProposal(1, proposalID, msg.sender, false);
     }
     function executeDelayBeforeEnforceProposal(uint256 proposalID) public {
     	require(
@@ -239,7 +238,7 @@ contract XVMCbasics is Ownable {
 			IXVMCgovernor(owner()).updateDelayBeforeEnforce(delayProposals[proposalID].proposedValue); 
 			delayProposals[proposalID].valid = false;
 			
-			emit ExecuteProposal(1, proposalID, msg.sender);
+			emit EnforceProposal(1, proposalID, msg.sender, true);
 		} else {
 			vetoDelayBeforeEnforceProposal(proposalID);
 		}
@@ -292,7 +291,7 @@ contract XVMCbasics is Ownable {
 
     	proposeDurationCalculation[proposalID].valid = false;  
     	
-    	emit VetoProposal(2, proposalID, msg.sender);
+    	emit EnforceProposal(2, proposalID, msg.sender, false);
     }
 
     function executeProposalDurationForCalculation(uint256 proposalID) public {
@@ -305,7 +304,7 @@ contract XVMCbasics is Ownable {
 			IXVMCgovernor(owner()).updateDurationForCalculation(proposeDurationCalculation[proposalID].proposedValue); 
 			proposeDurationCalculation[proposalID].valid = false; 
 			
-			emit ExecuteProposal(2, proposalID, msg.sender);
+			emit EnforceProposal(2, proposalID, msg.sender, true);
 		} else {
 			vetoProposalDurationForCalculation(proposalID);
 		}
@@ -352,7 +351,7 @@ contract XVMCbasics is Ownable {
  
     	rolloverBonuses[proposalID].valid = false;  
     	
-    	emit VetoProposal(3, proposalID, msg.sender);
+    	emit EnforceProposal(3, proposalID, msg.sender, false);
     }
 
     function executeProposalRolloverBonus(uint256 proposalID) public {
@@ -366,7 +365,7 @@ contract XVMCbasics is Ownable {
 			IXVMCgovernor(owner()).updateRolloverBonus(rolloverBonuses[proposalID].poolAddress, rolloverBonuses[proposalID].newBonus); 
 			rolloverBonuses[proposalID].valid = false; 
 			
-			emit ExecuteProposal(3, proposalID, msg.sender);
+			emit EnforceProposal(3, proposalID, msg.sender, true);
 		} else {
 			vetoProposalRolloverBonus(proposalID);
 		}
@@ -420,7 +419,7 @@ contract XVMCbasics is Ownable {
 
     	callFeeProposal[proposalID].valid = false;
     	
-    	emit VetoProposal(4, proposalID, msg.sender);
+    	emit EnforceProposal(4, proposalID, msg.sender, false);
     }
     function executeSetCallFee(uint256 proposalID) public {
     	require(
@@ -440,7 +439,7 @@ contract XVMCbasics is Ownable {
 			
 			callFeeProposal[proposalID].valid = false;
 			
-			emit ExecuteProposal(4, proposalID, msg.sender);
+			emit EnforceProposal(4, proposalID, msg.sender, true);
 		} else {
 			vetoSetCallFee(proposalID);
 		}
@@ -506,7 +505,7 @@ contract XVMCbasics is Ownable {
 
     	minThresholdFibonacceningProposal[proposalID].valid = false;
     	
-    	emit VetoProposal(5, proposalID, msg.sender);
+    	emit EnforceProposal(5, proposalID, msg.sender, false);
     }
     function executeSetMinThresholdFibonaccening(uint256 proposalID) public {
     	require(
@@ -519,7 +518,7 @@ contract XVMCbasics is Ownable {
 			IXVMCgovernor(owner()).setThresholdFibonaccening(minThresholdFibonacceningProposal[proposalID].proposedValue);
 			minThresholdFibonacceningProposal[proposalID].valid = false; 
 			
-			emit ExecuteProposal(5, proposalID, msg.sender);
+			emit EnforceProposal(5, proposalID, msg.sender, true);
 		} else {
 			vetoSetMinThresholdFibonaccening(proposalID);
 		}
@@ -568,7 +567,7 @@ contract XVMCbasics is Ownable {
 
     	grandSettingProposal[proposalID].valid = false;
     	
-    	emit VetoProposal(6, proposalID, msg.sender);
+    	emit EnforceProposal(6, proposalID, msg.sender, false);
     }
     function executeSetGrandParameters(uint256 proposalID) public {
     	require(
@@ -582,7 +581,7 @@ contract XVMCbasics is Ownable {
             IXVMCgovernor(owner()).updateGrandEventLength(grandSettingProposal[proposalID].proposedValue2); //duration
 			grandSettingProposal[proposalID].valid = false; 
 			
-			emit ExecuteProposal(6, proposalID, msg.sender);
+			emit EnforceProposal(6, proposalID, msg.sender, true);
 		} else {
 			vetoSetGrandParameters(proposalID);
 		}
