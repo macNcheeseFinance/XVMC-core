@@ -116,8 +116,7 @@ contract XVMCfibonaccening is Ownable {
     event InitiateProposeGrandFibonaccening(uint256 proposalID, uint256 depositingTokens, uint256 eventDate, uint256 finalSupply, address indexed enforcer, uint256 delay);
 	
 	event AddVotes(uint256 _type, uint256 proposalID, address indexed voter, uint256 tokensSacrificed, bool _for);
-	event VetoProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
-	event ExecuteProposal(uint256 _type, uint256 proposalID, address indexed enforcer);
+	event EnforceProposal(uint256 _type, uint256 proposalID, address indexed enforcer, bool isSuccess);
     
     event ChangeGovernor(address newGovernor);
 	
@@ -183,7 +182,7 @@ contract XVMCfibonaccening is Ownable {
  
     	fibonacceningProposals[proposalID].valid = false; 
     	
-    	emit VetoProposal(0, proposalID, msg.sender);
+    	emit EnforceProposal(0, proposalID, msg.sender, false);
     }
 
     /**
@@ -212,7 +211,7 @@ contract XVMCfibonaccening is Ownable {
 			fibonacceningActivatedBlock = block.number;
 			IXVMCgovernor(owner()).setActivateFibonaccening(true);
 			
-			emit ExecuteProposal(0, proposalID, msg.sender);
+			emit EnforceProposal(0, proposalID, msg.sender, true);
 		} else {
 			vetoFibonaccening(proposalID);
 		}
@@ -325,7 +324,7 @@ contract XVMCfibonaccening is Ownable {
     	    ProposeGrandFibonaccening(true, eventDate, block.timestamp, depositingTokens, 0, delay, finalSupply)
     	    );
     
-        emit ExecuteProposal(1, grandFibonacceningProposals.length - 1, msg.sender);
+        emit EnforceProposal(1, grandFibonacceningProposals.length - 1, msg.sender, true);
     }
 	function voteGrandFibonacceningY(uint256 proposalID, uint256 withTokens) external {
 		require(grandFibonacceningProposals[proposalID].valid, "invalid");
@@ -360,7 +359,7 @@ contract XVMCfibonaccening is Ownable {
 
     	grandFibonacceningProposals[proposalID].valid = false;  
     	
-    	emit VetoProposal(1, proposalID, msg.sender);
+    	emit EnforceProposal(1, proposalID, msg.sender, false);
     }
     
 	
@@ -388,11 +387,11 @@ contract XVMCfibonaccening is Ownable {
 			grandFibonacceningProposals[proposalID].valid = false;
 			desiredSupplyAfterGrandFibonaccening = grandFibonacceningProposals[proposalID].finalSupply;
 			
-			emit ExecuteProposal(1, proposalID, msg.sender);
+			emit EnforceProposal(1, proposalID, msg.sender, true);
 		} else {
 			grandFibonacceningProposals[proposalID].valid = false;  
     	
-			emit VetoProposal(1, proposalID, msg.sender);
+			emit EnforceProposal(1, proposalID, msg.sender, false);
 		}
     }
     
