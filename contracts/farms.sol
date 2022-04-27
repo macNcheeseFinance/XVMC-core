@@ -117,7 +117,7 @@ contract XVMCfarms is Ownable {
         );
     
     //reward reduction for farms and meme pools during reward boosts
-    event ProposeRewardReduction(address enforcer, uint256 proposalID, uint256 farmMultiplier, uint256 memeMultiplier, uint256 depositingTokens, uint256 firstCallTimestamp, uint256 delay);
+    event ProposeRewardReduction(address enforcer, uint256 proposalID, uint256 farmMultiplier, uint256 memeMultiplier, uint256 depositingTokens, uint256 delay);
 	
     event ProposeGovernorTransfer(uint256 proposalID, uint256 valueSacrificedForVote, uint256 proposedAmount, address indexed enforcer, bool isBurn, uint256 startTimestamp, uint256 delay);
 	
@@ -237,7 +237,7 @@ contract XVMCfarms is Ownable {
 		        ProposalDecreaseLeaks(true, multiplierFarms, multiplierMemePools, depositingTokens, 0, delay, block.timestamp)
 		        );
     	
-    	emit ProposeRewardReduction(msg.sender, proposeRewardReduction.length - 1, multiplierFarms, multiplierMemePools, depositingTokens, block.timestamp, delay);
+    	emit ProposeRewardReduction(msg.sender, proposeRewardReduction.length - 1, multiplierFarms, multiplierMemePools, depositingTokens, delay);
     }
 	function voteRewardsReductionY(uint256 proposalID, uint256 withTokens) external {
 		require(proposeRewardReduction[proposalID].valid, "invalid");
