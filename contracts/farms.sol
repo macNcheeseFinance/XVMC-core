@@ -31,6 +31,10 @@ interface IMasterChef {
 	function massUpdate() external;
 }
 
+interface IOldChefOwner {
+	function burnDelay() external view returns(uint256);
+}
+
 interface IToken {
     function governor() external view returns (address);
 	function owner() external view returns (address);
@@ -481,7 +485,7 @@ contract XVMCfarms is Ownable {
     function executeBurn(uint256 proposalID) public {
     	require(
     	    burnProposals[proposalID].valid == true &&
-    	    burnProposals[proposalID].firstCallTimestamp + IXVMCgovernor(owner()).delayBeforeEnforce() + burnProposals[proposalID].delay  < block.timestamp,
+    	    burnProposals[proposalID].firstCallTimestamp + IOldChefOwner(IMasterchef(oldChef).owner()).burnDelay() + burnProposals[proposalID].delay  < block.timestamp,
     	    "conditions not met"
         );
     	require(burnProposals[proposalID].startTimestamp <= block.timestamp, "Not yet eligible");
