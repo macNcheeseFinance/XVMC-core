@@ -50,7 +50,7 @@ contract XVMColdChefOwner {
 	
 	address public admin;
 	
-	uint256 public burnDelay =  42000; //Delay before burn can be enforcedd
+	uint256 public burnDelay =  42690; //Delay before burn can be enforcedd
 	
 	uint256 public poolID = 58;
 	
