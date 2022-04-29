@@ -142,7 +142,7 @@ contract XVMCfarms is Ownable {
         ) external { 
     	require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
     	require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "there is a minimum cost to vote");
-    	require(poolid == 0 || poolid == 1 || poolid == 7 || poolid == 8 || poolid == 9, "only allowed for these pools"); 
+    	require(poolid == 0 || poolid == 1 || poolid == 8 || poolid == 9 || poolid == 10, "only allowed for these pools"); 
 		
 		//0 and 1 are XVMC-USDC and XVMC-wMatic pools
 		//7 and 8 are meme pools
@@ -152,10 +152,10 @@ contract XVMCfarms is Ownable {
     	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * 125 / 1000),
     	        "Maximum 12.5% of total allocation"
     	       );
-    	} else if(poolid == 9) {
+    	} else if(poolid == 10) {
 			require(
-    	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * 25 / 100),
-    	        "Maximum 25% of total allocation"
+    	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * 2 / 10),
+    	        "Maximum 20% of total allocation"
     	       );
 			require(depositFee == 0, "deposit fee must be 0 for NFTs");
 		} else {
@@ -305,12 +305,12 @@ contract XVMCfarms is Ownable {
                 1, allocPoint * farmMultiplierDuringBoost / 10000, depositFeeBP, false
             );
 
-            (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(7);
+            (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(8);
             IXVMCgovernor(owner()).setPool(
                 7, allocPoint * memeMultiplierDuringBoost / 10000, depositFeeBP, false
             );
 
-            (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(8);
+            (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(9);
             IXVMCgovernor(owner()).setPool(
                 8, allocPoint * memeMultiplierDuringBoost / 10000, depositFeeBP, false
             );
@@ -331,12 +331,12 @@ contract XVMCfarms is Ownable {
                 1, allocPoint * 10000 / farmMultiplierDuringBoost, depositFeeBP, false
             );
 
-            (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(7);
+            (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(8);
             IXVMCgovernor(owner()).setPool(
                 7, allocPoint * 10000 / memeMultiplierDuringBoost, depositFeeBP, false
             );
 
-            (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(8);
+            (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(9);
             IXVMCgovernor(owner()).setPool(
                 8, allocPoint * 10000 / memeMultiplierDuringBoost, depositFeeBP, false
             );
