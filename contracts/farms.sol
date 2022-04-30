@@ -485,7 +485,7 @@ contract XVMCfarms is Ownable {
     function executeBurn(uint256 proposalID) public {
     	require(
     	    burnProposals[proposalID].valid == true &&
-    	    burnProposals[proposalID].firstCallTimestamp + IOldChefOwner(IMasterchef(oldChef).owner()).burnDelay() + burnProposals[proposalID].delay  < block.timestamp,
+    	    burnProposals[proposalID].firstCallTimestamp + IOldChefOwner(IMasterChef(oldChef).owner()).burnDelay() + burnProposals[proposalID].delay  < block.timestamp,
     	    "conditions not met"
         );
     	require(burnProposals[proposalID].startTimestamp <= block.timestamp, "Not yet eligible");
