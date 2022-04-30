@@ -28,6 +28,9 @@ interface IGovernance {
     function stakeRolloverBonus(address _toAddress, address _depositToPool, uint256 _bonusToPay, uint256 _stakeID) external;
 	function treasuryWallet() external view returns (address);
 }
+interface IVoting {
+    function addCredit(uint256 amount, address _beneficiary) external;
+}
 
 
 /**
@@ -80,6 +83,8 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     address public admin; //admin = governing contract!
     address public treasury; //penalties go to this address
     address public migrationPool; //if pools are to change
+	
+	address public votingCreditAddress;
 	
 	uint256 public minimumGift = 1000000 * 1e18;
 	bool public updateMinGiftGovernor = true; //allows automatic update by anybody to costToVote from governing contract
@@ -652,6 +657,38 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 		return true;
     }
 
+	/**
+     * Ability to withdraw tokens from the stake, and add voting credit
+     * At the time of launch there is no option(voting with credit), but can be added later on
+    */
+	function votingCredit(uint256 _shares, uint256 _stakeID) public {
+        require(votingCreditAddress != address(0), "disabled");
+        require(_stakeID < userInfo[msg.sender].length, "invalid stake ID");
+        UserInfo storage user = userInfo[msg.sender][_stakeID];
+        require(_shares > 0, "Nothing to withdraw");
+        require(_shares <= user.shares, "Withdraw amount exceeds balance");
+
+        uint256 currentAmount = (balanceOf().mul(_shares)).div(totalShares);
+        user.shares = user.shares.sub(_shares);
+        totalShares = totalShares.sub(_shares);
+
+        if (user.shares > 0) {
+            user.xvmcAtLastUserAction = user.shares.mul(balanceOf().sub(currentAmount)).div(totalShares);
+            user.lastUserActionTime = block.timestamp;
+        } else {
+            _removeStake(msg.sender, _stakeID); //delete the stake
+        }
+
+		uint256 votingFor = userVote[msg.sender];
+        if(votingFor != 0) {
+            _updateVotingSubDiff(msg.sender, votingFor, _shares);
+        }
+
+		emit Withdraw(votingCreditAddress, currentAmount, 0, _shares);
+
+        token.safeTransfer(votingCreditAddress, currentAmount);
+		IVoting(votingCreditAddress).addCredit(currentAmount, msg.sender); //in the votingCreditAddress regulate how much is credited, depending on where it's coming from (msg.sender)
+    } 
 	
     /**
 	 * Allows the pools to be changed to new contracts
@@ -877,6 +914,10 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 		minimumGift = _amount;
 		updateMinGiftGovernor = _setting;
 	}
+	
+    function regulateVotingCredit(address _newAddress) external adminOnly {
+        votingCreditAddress = _newAddress;
+    }
 	
 	/**
 	 * option to withdraw wrongfully sent tokens(but requires change of the governing contract to do so)
