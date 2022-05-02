@@ -106,8 +106,6 @@ contract XVMCfarms is Ownable {
 	
 	address public oldChef = 0x9BD741F077241b594EBdD745945B577d59C8768e;
     
-    uint256 maxRewards = 26000 * 1e18; //maximum reward/block when boosts inactivated
-    
     //farms and meme pools rewards have no lock 
     //reduce the rewards during inflation boost
     //to prevent tokens reaching the market
