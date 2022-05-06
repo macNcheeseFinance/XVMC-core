@@ -49,7 +49,7 @@ contract xvmcNFTallocationProxy {
     event SetAllocationContract(address contractAddress, bool setting);
     event SetPendingContract(address contractAddress, bool setting);
     event UpdateVotes(address contractAddress, uint256 weightedVote);
-    event NotifyVote(address _contract, uint256 uintValue);
+    event NotifyVote(address _contract, uint256 uintValue, address enforcer);
 
     function getAllocation(address _tokenAddress, uint256 _tokenID, address _allocationContract) external view returns (uint256) {
         if(allocationContract[_allocationContract]) {
@@ -61,7 +61,7 @@ contract xvmcNFTallocationProxy {
 
     // notify "start of voting" on the frontend
     function notifyVote(address _contract) external {
-        emit NotifyVote(_contract, addressToUint256(_contract));
+        emit NotifyVote(_contract, addressToUint256(_contract), msg.sender);
     }
 
     function proposeAllocationContract(address _contract) external {
