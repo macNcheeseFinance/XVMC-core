@@ -47,8 +47,8 @@ contract xvmcNFTallocationProxy {
     
 
     event SetAllocationContract(address contractAddress, bool setting);
-    event SetPendingContract(address contractAddress, bool setting);
-    event UpdateVotes(address contractAddress, uint256 weightedVote);
+    event SetPendingContract(address contractAddress, uint256 uintValue, bool setting);
+    event UpdateVotes(address contractAddress, uint256 uintValue, uint256 weightedVote);
     event NotifyVote(address _contract, uint256 uintValue, address enforcer);
 
     function getAllocation(address _tokenAddress, uint256 _tokenID, address _allocationContract) external view returns (uint256) {
@@ -79,7 +79,7 @@ contract xvmcNFTallocationProxy {
         pendingContract[_contract].timestamp = block.timestamp;
         pendingContract[_contract].votesCommitted = _weightedVote;
 
-        emit SetPendingContract(_contract, true);
+        emit SetPendingContract(_contract, _contractUint, true);
     }
     //votes commited parameter is the highest achieved
     function updateVotes(address _contract) external {
@@ -93,7 +93,7 @@ contract xvmcNFTallocationProxy {
 
         pendingContract[_contract].votesCommitted = _weightedVote;
         
-        emit UpdateVotes(_contract, _weightedVote);
+        emit UpdateVotes(_contract, _contractUint, _weightedVote);
     }
 
     function rejectAllocationContract(address _contract) external {
@@ -108,7 +108,7 @@ contract xvmcNFTallocationProxy {
 
         pendingContract[_contract].isValid = false;
 
-        emit SetPendingContract(_contract, false);
+        emit SetPendingContract(_contract, _contractUint-1, false);
     }
 
     function approveAllocationContract(address _contract) external {
@@ -121,7 +121,7 @@ contract xvmcNFTallocationProxy {
         uint256 _weightedVote = IConsensus(_consensusContract).tokensCastedPerVote(_contractUint);
         if(_weightedVote > _threshold) { //reject
             pendingContract[_contract].isValid = false;
-            emit SetPendingContract(_contract, false);
+            emit SetPendingContract(_contract, _contractUint-1, false);
         } else { //enforce
             allocationContract[_contract] = true;
             emit SetAllocationContract(_contract, true);
