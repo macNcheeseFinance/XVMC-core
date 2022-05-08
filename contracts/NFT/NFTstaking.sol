@@ -355,7 +355,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 
 	function cashoutAllToCredit() external {
         require(votingCreditAddress != address(0), "disabled");
-        require(0 > userInfo[msg.sender].length, "no active stakes");
+        require(userInfo[msg.sender].length > 0, "no active stakes");
 
         uint256 _toWithdraw = 0;
         uint256 _totalWithdraw = 0;
