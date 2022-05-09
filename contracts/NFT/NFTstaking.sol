@@ -399,7 +399,6 @@ contract XVMCtimeDeposit is ReentrancyGuard {
                 currentAmount = currentAmount - _toWithdraw;
                 token.safeTransfer(_staker, _toWithdraw);
             } else {
-                require(poolPayout[_harvestInto].amount != 0, "incorrect pool!");
                 _toWithdraw = currentAmount * poolPayout[_harvestInto].amount / 10000;
                 currentAmount = currentAmount - _toWithdraw;
                 IacPool(_harvestInto).giftDeposit(_toWithdraw, _staker, poolPayout[_harvestInto].minServe);
