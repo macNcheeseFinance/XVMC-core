@@ -91,13 +91,6 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     uint256 defaultFeeToPay = 250; //fee for calling 2.5% default
 
     uint256 defaultDirectPayout = 500; //5% if withdrawn into wallet
-	
-    address public acPool1;
-    address public acPool2;
-    address public acPool3;
-    address public acPool4;
-    address public acPool5;
-    address public acPool6;
 
     event Deposit(address indexed tokenAddress, uint256 tokenID, address indexed depositor, uint256 shares, uint256 nftAllocation);
     event Withdraw(address indexed sender, uint256 stakeID, address token, uint256 tokenID, uint256 shares, uint256 harvestAmount);
