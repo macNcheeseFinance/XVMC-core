@@ -157,7 +157,7 @@ contract XVMCfarms is Ownable {
     	} else if(poolid == 10) {
 			require(
     	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * 15 / 100),
-    	        "Maximum 20% of total allocation"
+    	        "Maximum 15% of total allocation"
     	       );
 			require(depositFee == 0, "deposit fee must be 0 for NFTs");
 		} else {
