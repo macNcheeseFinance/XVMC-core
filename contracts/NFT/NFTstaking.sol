@@ -52,8 +52,6 @@ contract XVMCtimeDeposit is ReentrancyGuard {
         uint256 debt; //the allocation for the NFT at the time of deposit(why named debt? idk)
         //basically debt because it counts as "artificial tokens"(we deposit a singular NFT worth an artificial amount)
         //simple substitute for using NFTs instead of regular tokens
-        uint256 lastUserActionTime; // keeps track of the last user action time
-        uint256 tokensEarned; // optional: disables early withdraw
     }
     struct UserSettings {
         address pool; //which pool to payout in
@@ -89,8 +87,8 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 
     //if user settings not set, use default
     address defaultHarvest; //pool address to harvest into
-    uint256 defaultHarvestThreshold;
-    uint256 defaultFeeToPay; //fee for calling
+    uint256 defaultHarvestThreshold = 1000000;
+    uint256 defaultFeeToPay = 250; //fee for calling 2.5% default
 
     uint256 defaultDirectPayout = 500; //5% if withdrawn into wallet
 	
@@ -162,7 +160,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
         tokenDebt = tokenDebt + _allocationAmount;
         
         userInfo[msg.sender].push(
-                UserInfo(_tokenAddress, _tokenID, currentShares, _allocationAmount, block.timestamp, 0)
+                UserInfo(_tokenAddress, _tokenID, currentShares, _allocationAmount)
             );
 
         emit Deposit(_tokenAddress, _tokenID, msg.sender, currentShares, _allocationAmount);
@@ -299,12 +297,11 @@ contract XVMCtimeDeposit is ReentrancyGuard {
         } else {
             if(_harvestInto == address(0)) {
                 _harvestInto = defaultHarvest; //default pool
-            } else {
-                require(poolPayout[_harvestInto].amount != 0, "incorrect pool!"); //makes sure pool is correct
-            }
+            } //harvest Into is correct(checks if valid when user initiates the setting)
             
             _toWithdraw = (balanceOf() * _totalWithdraw) / totalShares;
             _payout = _toWithdraw * poolPayout[_harvestInto].amount / 10000;
+            require(_payout > _minThreshold, "minimum threshold not met");
             _callFee = _payout * _callFee / 10000;
             token.safeTransfer(msg.sender, _callFee); 
             IacPool(_harvestInto).giftDeposit((_payout - _callFee), _beneficiary, poolPayout[_harvestInto].minServe);
@@ -374,6 +371,54 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 
         emit AddVotingCredit(msg.sender, currentAmount);
     } 
+
+    //if allocation for the NFT changes, anyone can rebalance
+    function rebalanceNFT(address _staker, uint256 _stakeID) external {
+        UserInfo storage user = userInfo[_staker][_stakeID];
+        uint256 _alloc = INFTallocation(allocationContract).nftAllocation(user.tokenAddress, user.tokenID);
+        if(_alloc == 0) { //no longer valid, anyone can push out and withdraw NFT to the owner (copy+paste withdraw option)
+            harvest();
+            require(_stakeID < userInfo[_staker].length, "invalid stake ID");
+
+            uint256 currentAmount = (balanceOf() * (maxHarvest(user))) / (totalShares);
+            totalShares = totalShares - user.shares;
+            tokenDebt = tokenDebt - user.debt;
+
+            uint256 _tokenID = user.tokenID;
+
+            emit Withdraw(_staker, _stakeID, user.tokenAddress, _tokenID, user.shares, currentAmount);
+            
+            _removeStake(_staker, _stakeID); //delete the stake
+
+            address _harvestInto = userSettings[_staker].pool;
+            if(_harvestInto == address(0)) { _harvestInto = defaultHarvest; } 
+
+            uint256 _toWithdraw;      
+            if(_harvestInto == _staker) { 
+                _toWithdraw = currentAmount * defaultDirectPayout / 10000;
+                currentAmount = currentAmount - _toWithdraw;
+                token.safeTransfer(_staker, _toWithdraw);
+            } else {
+                require(poolPayout[_harvestInto].amount != 0, "incorrect pool!");
+                _toWithdraw = currentAmount * poolPayout[_harvestInto].amount / 10000;
+                currentAmount = currentAmount - _toWithdraw;
+                IacPool(_harvestInto).giftDeposit(_toWithdraw, _staker, poolPayout[_harvestInto].minServe);
+            }
+            token.safeTransfer(treasury, currentAmount); //penalty goes to governing contract
+
+            IERC721(user.tokenAddress).safeTransferFrom(address(this), _staker, _tokenID); //withdraw NFT
+        } else if(_alloc != user.debt) { //change allocation
+            uint256 _profitShares = maxHarvest(user); 
+            uint256 _profitTokens = (balanceOf() * _profitShares) / totalShares;
+            //artificial withdraw, then re-deposit with new allocaiton, along with profited tokens
+            totalShares = totalShares - user.shares; //as if ALL shares and ALL DEBT was withdrawn (actual profit tokens remain inside!)
+            tokenDebt = tokenDebt - user.debt;
+            user.shares = ((_alloc+_profitTokens) * totalShares) / (balanceOf() - _profitTokens); 
+            tokenDebt = tokenDebt + _alloc;
+            user.debt = _alloc;
+            totalShares = totalShares + user.shares;
+        }
+    }
 
     //need to set pools before launch or perhaps during contract launch
     //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
