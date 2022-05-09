@@ -316,7 +316,7 @@ contract XVMCbasics is Ownable {
     function initiateProposalRolloverBonus(uint256 depositingTokens, address _forPoolAddress, uint256 _newBonus, uint256 delay) external { 
 		require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
     	require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "minimum cost to vote");
-		require(_newBonus <= 2000, "bonus too high");
+		require(_newBonus <= 1500, "bonus too high, max 15%");
     
     	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
     	rolloverBonuses.push(
