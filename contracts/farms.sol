@@ -106,6 +106,10 @@ contract XVMCfarms is Ownable {
 	
 	address public oldChef = 0x9BD741F077241b594EBdD745945B577d59C8768e;
     
+	uint256 public maxLpAllocation = 1250;
+	uint256 public maxNftAllocation = 1000;
+	uint256 public maxMemeAllocation = 5000;
+	
     //farms and meme pools rewards have no lock 
     //reduce the rewards during inflation boost
     //to prevent tokens reaching the market
@@ -134,6 +138,13 @@ contract XVMCfarms is Ownable {
 		token = _XVMC;
 		masterchef = _masterchef;
 	}
+
+	//ability to change max allocations without launching new contract
+	function changeMaxAllocations(uint256 _lp, uint256 _nft, uint256 _meme) external onlyOwner {
+		maxLpAllocation = _lp;
+		maxNftAllocation = _nft;
+		maxMemeAllocation = _meme;
+	}
     
     /**
      * Regulatory process to regulate farm rewards 
@@ -147,23 +158,23 @@ contract XVMCfarms is Ownable {
     	require(poolid == 0 || poolid == 1 || poolid == 8 || poolid == 9 || poolid == 10, "only allowed for these pools"); 
 		
 		//0 and 1 are XVMC-USDC and XVMC-wMatic pools
-		//7 and 8 are meme pools
-		//9 is for NFT staking(nfts and virtual land)
+		//8 and 9 are meme pools
+		//10 is for NFT staking(nfts and virtual land)
     	if(poolid == 0 || poolid == 1) {
     	    require(
-    	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * 125 / 1000),
-    	        "Maximum 12.5% of total allocation"
+    	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * maxLpAllocation / 10000),
+    	        "exceeds max allocation"
     	       );
     	} else if(poolid == 10) {
 			require(
-    	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * 15 / 100),
-    	        "Maximum 15% of total allocation"
+    	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * maxNftAllocation / 10000),
+    	        "exceeds max allocation"
     	       );
 			require(depositFee == 0, "deposit fee must be 0 for NFTs");
 		} else {
     	    require(
-    	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * 5 / 100),
-    	        "Maximum 5% of total allocation"
+    	        newAllocation <= (IMasterChef(masterchef).totalAllocPoint() * maxMemeAllocation / 10000),
+    	        "exceeds max allocation"
     	       ); 
     	}
     
