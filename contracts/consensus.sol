@@ -343,8 +343,8 @@ contract XVMCconsensus is Ownable {
 				"Requires atleast 33% of staked(weighted) tokens"
         );
 
-        //requires 75% agreement
-        if(tokensCastedPerVote(proposalID+1) >= tokensCastedPerVote(proposalID) / 4) {
+        //requires 80% agreement
+        if(tokensCastedPerVote(proposalID+1) >= tokensCastedPerVote(proposalID) / 5) {
             
                 isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated = true;
                 
@@ -360,13 +360,13 @@ contract XVMCconsensus is Ownable {
     }
     
     /**
-     * After approved, still roughly 6 days to cancle the new governor, if less than 75% votes agree
+     * After approved, still roughly 6 days to cancle the new governor, if less than 80% votes agree
      */
     function vetoGovernor(uint256 proposalID) external {
         require(proposalID % 2 == 1, "Invalid proposal ID");
         require(isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].hasPassed);
 
-        if(tokensCastedPerVote(proposalID+1) >= tokensCastedPerVote(proposalID) / 4) {
+        if(tokensCastedPerVote(proposalID+1) >= tokensCastedPerVote(proposalID) / 5) {
               isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated = true;
 			  emit ChangeGovernor(proposalID, msg.sender, false);
         }
