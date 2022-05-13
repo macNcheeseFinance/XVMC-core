@@ -37,6 +37,7 @@ interface IChange {
     function changeGovernor() external;
     function updatePools() external;
     function setAdmin() external;
+    function setMasterchef() external;
 }
 
 interface IDummy {
@@ -66,6 +67,7 @@ contract XVMCsyncContracts {
         updatePoolsInSideContracts();
         updateDummysOwner(false);
         updateOldChef(true);
+        updateMasterchef();
     }
 
     function updatePools() public {
@@ -134,5 +136,10 @@ contract XVMCsyncContracts {
         }
         
         IChange(_oldChefOwner).setAdmin();
+    }
+    
+    function updateMasterchef() public {
+        IChange(IGovernor(governor).farmContract()).setMasterchef();
+        IChange(IGovernor(governor).fibonacceningContract()).setMasterchef();
     }
 }
