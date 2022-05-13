@@ -384,7 +384,7 @@ contract XVMCbasics is Ownable {
     function initiateSetCallFee(uint256 depositingTokens, uint256 newCallFee, uint256 delay) external { 
     	require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "below minimum cost to vote");
     	require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
-    	require(newCallFee <= 100);
+    	require(newCallFee <= 100, "maximum 1%");
     
     	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
     	callFeeProposal.push(
