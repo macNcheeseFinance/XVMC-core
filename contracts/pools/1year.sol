@@ -540,7 +540,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 	* delegatee can vote with shares of another user
 	*/
     function delegateeVote(address[] calldata votingAddress, uint256 proposalID) external {
-        for(uint8 i = 0; i < votingAddress.length; i++) { //max 255 loops
+        for(uint256 i = 0; i < votingAddress.length; i++) { 
 			if(userDelegate[votingAddress[i]] == msg.sender) {
 				uint256 votingFor = userVote[votingAddress[i]]; //the ID the user is voting for(before change)
 				
