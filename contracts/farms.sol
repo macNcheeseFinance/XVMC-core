@@ -28,7 +28,7 @@ interface IMasterChef {
     function poolInfo(uint256) external returns (address, uint256, uint256, uint256, uint16);
     function XVMCPerBlock() external returns (uint256);
     function owner() external view returns (address);
-	function massUpdate() external;
+	function massUpdatePools() external;
 }
 
 interface IOldChefOwner {
@@ -362,7 +362,7 @@ contract XVMCfarms is Ownable {
 
 	//updates all pools in masterchef
     function updateAllPools() public {
-        IMasterChef(IToken(token).owner()).massUpdate();
+        IMasterChef(IToken(token).owner()).massUpdatePools();
     }
 
 	/*
