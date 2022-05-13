@@ -20,7 +20,7 @@ interface IXVMCgovernor {
     function delayFibonacci(bool _arg) external;
     function totalFibonacciEventsAfterGrand() external returns (uint256);
     function rewardPerBlockPriorFibonaccening() external returns (uint256);
-    function blocks100PerSecond() external returns (uint256);
+    function blocksPerSecond() external returns (uint256);
     function changeGovernorEnforced() external returns (bool);
     function eligibleNewGovernor() external returns (address);
 	function burnFromOldChef(uint256 _amount) external;
@@ -143,8 +143,8 @@ contract XVMCfibonaccening is Ownable {
         );
 		require(newRewardPerBlock > goldenRatio, "can't go below goldenratio"); //would enable grand fibonaccening
 		//duration(in blocks) must be lower than amount of blocks mined in 30days(can't last more than roughly 30days)
-		//30(days)*24(hours)*3600(seconds) * 100 (to negate x100 blocks per second) = 259200000
-		uint256 amountOfBlocksIn30Days = 259200000 / IXVMCgovernor(owner()).blocks100PerSecond();
+		//30(days)*24(hours)*3600(seconds)  = 2592000
+		uint256 amountOfBlocksIn30Days = 2592 * IXVMCgovernor(owner()).blocksPerSecond() / 1000;
 		require(durationInBlocks <= amountOfBlocksIn30Days, "maximum 30days duration");
     
 		IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens); 
@@ -285,7 +285,7 @@ contract XVMCfibonaccening is Ownable {
 		// divide by 1000 to turn 1618 into 1.618% (and then divide farther by 100 to convert percentage)
         uint256 supplyToPrint = initialSupply * _factor / 100000; 
 		
-        uint256 rewardPerBlock = supplyToPrint / (365 * 24 * 360000 / IXVMCgovernor(owner()).blocks100PerSecond());
+        uint256 rewardPerBlock = supplyToPrint / (365 * 24 * 36 * IXVMCgovernor(owner()).blocksPerSecond() / 10000);
         IXVMCgovernor(owner()).setInflation(rewardPerBlock);
        
         emit RebalanceInflation(rewardPerBlock);
@@ -430,7 +430,7 @@ contract XVMCfibonaccening is Ownable {
 			uint256 amountToPrint = targetedSupply - _totalSupply; // (+61.8%)
             
 			//printing the amount(61.8% of supply) in uint256(grandEventLength) seconds ( blocks in second are x100 )
-            uint256 rewardPerBlock = amountToPrint / (grandEventLength * 100 / IXVMCgovernor(owner()).blocks100PerSecond()); 
+            uint256 rewardPerBlock = amountToPrint / (grandEventLength * IXVMCgovernor(owner()).blocksPerSecond() / 1000000); 
 			targetBlock = block.number + (amountToPrint / rewardPerBlock);
             IXVMCgovernor(owner()).setInflation(rewardPerBlock);
 			
@@ -458,7 +458,7 @@ contract XVMCfibonaccening is Ownable {
 		require(block.timestamp - lastCallFibonaccening > delayBetweenEvents, "pending delay");
         require((block.timestamp % 86400) / 3600 >= 16, "only after 16:00 UTC");
         
-        uint256 rewardPerBlock = ( desiredSupplyAfterGrandFibonaccening -  _totalSupply ) / (grandEventLength * 100 / IXVMCgovernor(owner()).blocks100PerSecond()); //prints in desired time
+        uint256 rewardPerBlock = ( desiredSupplyAfterGrandFibonaccening -  _totalSupply ) / (grandEventLength * IXVMCgovernor(owner()).blocksPerSecond() / 1000000); //prints in desired time
 		targetBlock = (desiredSupplyAfterGrandFibonaccening -  _totalSupply) / rewardPerBlock;
         IXVMCgovernor(owner()).setInflation(rewardPerBlock);
                 
@@ -472,7 +472,7 @@ contract XVMCfibonaccening is Ownable {
 		uint256 _totalSupply = getTotalSupply();
 		uint256 tokensToPrint = ( _totalSupply * goldenRatio / 1000) -  _totalSupply;
 		
-        uint256 newEmissions =  tokensToPrint / (365 * 24 * 360000 / IXVMCgovernor(owner()).blocks100PerSecond()); 
+        uint256 newEmissions =  tokensToPrint / (365 * 24 * 36 * IXVMCgovernor(owner()).blocksPerSecond() / 10000); 
 		
         IXVMCgovernor(owner()).setInflation(newEmissions);
         isRunningGrand = false;
