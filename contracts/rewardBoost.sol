@@ -103,7 +103,7 @@ contract XVMCfibonaccening is Ownable {
     
     uint256 public tokensForBurn; //tokens we draw from governor to burn for fib event
 
-	uint256 public grandEventLength = 24 * 3600; // default Duration for the Grand Fibonaccening(the time in which 61.8% of the supply is printed)
+	uint256 public grandEventLength = 14 * 24 * 3600; // default Duration for the Grand Fibonaccening(the time in which 61.8% of the supply is printed)
 	uint256 public delayBetweenEvents = 48 * 3600; // delay between when grand events can be triggered(default 48hrs)
 
     event ProposeFibonaccening(uint256 proposalID, uint256 valueSacrificedForVote, uint256 startTime, uint256 durationInBlocks, uint256 newRewardPerBlock , address indexed enforcer, uint256 delay);
