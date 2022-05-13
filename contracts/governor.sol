@@ -134,7 +134,7 @@ contract XVMCgovernor {
     uint256 public rewardPerBlockPriorFibonaccening; //remembers the last reward used
     bool public eventFibonacceningActive; // prevent some functions if event is active ..threshold and durations for fibonaccening
     
-    uint256 public blocks100PerSecond = 230; //x100 blocks/second
+    uint256 public blocksPerSecond = 434783; // divids with a million
     uint256 public durationForCalculation= 12 hours; //period used to calculate block time
     uint256  public lastBlockHeight; //block number when counting is activated
     uint256 public recordTimeStart; //timestamp when counting is activated
@@ -196,7 +196,7 @@ contract XVMCgovernor {
     } 
     function calculateAverageBlockTime() external {
         require(countingBlocks && (recordTimeStart + durationForCalculation) <= block.timestamp);
-        blocks100PerSecond = 100 * (block.number - lastBlockHeight) / (block.timestamp - recordTimeStart);
+        blocksPerSecond = 1000000 * (block.number - lastBlockHeight) / (block.timestamp - recordTimeStart);
         countingBlocks = false;
     }
     
