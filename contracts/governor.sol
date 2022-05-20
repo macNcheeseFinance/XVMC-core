@@ -443,7 +443,7 @@ contract XVMCgovernor {
     
     /**
      * The weak point, Polygon-ETH bridge is secured by a 5/8 multisig.
-	 * Can change governing contract thru a multisig(without consensus) and 30% of weighted votes voting in favor
+	 * Can change governing contract thru a multisig(without consensus) and 42% of weighted votes voting in favor
 	 * https://docs.polygon.technology/docs/faq/commit-chain-multisigs/
      */
     function multiSigGovernorChange(address _newGovernor) external {
@@ -459,7 +459,7 @@ contract XVMCgovernor {
 		uint256 _totalStaked = IConsensus(consensusContract).totalXVMCStaked();
 		uint256 _totalVotedInFavor = IConsensus(consensusContract).tokensCastedPerVote(uint256(uint160(_newGovernor)));
 		
-		require(_totalVotedInFavor >= (_totalStaked * 30 / 100), "Minimum 30% weighted vote required");
+		require(_totalVotedInFavor >= (_totalStaked * 42 / 100), "Minimum 42% weighted vote required");
         
         IMasterChef(masterchef).setFeeAddress(_newGovernor);
         IMasterChef(masterchef).dev(_newGovernor);
