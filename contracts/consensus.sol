@@ -90,6 +90,8 @@ contract XVMCconsensus is Ownable {
 
 
     mapping(address => GovernorInvalidated) public isGovInvalidated;
+	
+	mapping(uint256 => uint256) public highestConsensusVotes; // *kinda* allows voting for multiple proposals
     
 	constructor(address _XVMC) {
             consensusProposal.push(ConsensusVote(0, address(this), block.timestamp)); //0 is an invalid proposal(is default / neutral position)
@@ -259,6 +261,8 @@ contract XVMCconsensus is Ownable {
 	function approveTreasuryTransfer(uint256 proposalID) public {
 		require(treasuryProposal[proposalID].valid, "Proposal already invalid");
 		uint256 consensusID = treasuryProposal[proposalID].consensusProposalID;
+		updateHighestConsensusVotes(consensusID);
+		updateHighestConsensusVotes(consensusID+1);
 		require(
 			treasuryProposal[proposalID].firstCallTimestamp + treasuryProposal[proposalID].delay + 2 * IXVMCgovernor(owner()).delayBeforeEnforce() <= block.timestamp,
 			"Enough time must pass before enforcing"
@@ -266,13 +270,13 @@ contract XVMCconsensus is Ownable {
 		
 		uint256 _totalStaked = totalXVMCStaked();
 		if(treasuryProposal[proposalID].valueSacrificedForVote >= treasuryProposal[proposalID].valueSacrificedAgainst) {
-			uint256 _castedInFavor = tokensCastedPerVote(consensusID);
+			uint256 _castedInFavor = highestConsensusVotes[consensusID];
 			require(
 				_castedInFavor >= _totalStaked * 15 / 100,
 					"15% weigted vote required to approve the proposal"
 			);
 			
-			if(tokensCastedPerVote(consensusID+1) >= _castedInFavor * 33 / 100) { //just third of votes voting against kills the treasury withdrawal
+			if(highestConsensusVotes[consensusID+1] >= _castedInFavor * 33 / 100) { //just third of votes voting against kills the treasury withdrawal
 				treasuryProposal[proposalID].valid = false;
 				emit TreasuryEnforce(proposalID, msg.sender, false);
 			} else {
@@ -305,6 +309,14 @@ contract XVMCconsensus is Ownable {
     	treasuryProposal[proposalID].valid = false;  
 		
     	emit TreasuryEnforce(proposalID, msg.sender, false);
+	}
+	
+	//updates highest votes collected
+	function updateHighestConsensusVotes(uint256 consensusID) public {
+		uint256 _current = tokensCastedPerVote(consensusID);
+		if(_current > highestConsensusVotes[consensusID]) {
+			highestConsensusVotes[consensusID] = _current;
+		}
 	}
 	
 	
