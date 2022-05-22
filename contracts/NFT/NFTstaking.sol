@@ -34,12 +34,11 @@ interface IacPool {
 }
 
 interface INFTallocation {
-    function nftAllocation(address _tokenAddress, uint256 _tokenID) external view returns (uint256);
+    function nftAllocation(address _tokenAddress, uint256 _tokenID, address _allocationContract) external view returns (uint256);
 }
 
 /**
- * XVMC time-locked deposit
- * Auto-compounding pool(1Month Deposit)
+ * XVMC NFT staking contract
  * !!! Warning: !!! Licensed under Business Source License 1.1 (BSL 1.1)
  */
 contract XVMCtimeDeposit is ReentrancyGuard {
@@ -79,7 +78,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     uint256 public totalShares;
     address public admin; //admin = governing contract!
     address public treasury; //penalties
-    address public allocationContract;
+    address public allocationContract; // PROXY CONTRACT for looking up allocations
 
     address public votingCreditAddress;
 
@@ -136,8 +135,8 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     /**
      * Creates a NEW stake
      */
-    function deposit(address _tokenAddress, uint256 _tokenID) external nonReentrant {
-    	uint256 _allocationAmount = INFTallocation(allocationContract).nftAllocation(_tokenAddress, _tokenID);
+    function deposit(address _tokenAddress, uint256 _tokenID, address _allocationContract) external nonReentrant {
+    	uint256 _allocationAmount = INFTallocation(allocationContract).nftAllocation(_tokenAddress, _tokenID, _allocationContract);
         require(_allocationAmount > 0, "Invalid NFT, no allocation");
         harvest();
         uint256 pool = balanceOf();
