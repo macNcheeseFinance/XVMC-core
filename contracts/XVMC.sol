@@ -26,6 +26,9 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	
 	//additionally, users can disable the feature and revert to mandatory allowance(as per ERC20 standard)
 	mapping(address => bool) public requireAllowance;
+	
+	//easier to verify(without event logs)
+	uint256 public trustedContractCount; 
     
 	constructor() ERC20("Mac&Cheese", "XVMC") {
 		_name = string("Mac&Cheese");
@@ -91,16 +94,18 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	
 	//only owner can set trusted Contracts
 	function setTrustedContract(address _contractAddress, bool _setting) external decentralizedVoting {
-		require(allowTrustedContracts, "Trusted contracts have been renounced, immutably");
+		require(allowTrustedContracts, "Trusted contracts have been renounced");
 		trustedContract[_contractAddress] = _setting;
+		
+		_setting ? trustedContractCount++ : trustedContractCount--;
 		
 		emit TrustedContract(_contractAddress, _setting);
 	}
 	
 	//option to globally disable trusted contracts and revert to the ERC20 standard
 	//first set all current trustedContract settings to false, then call this function to renounce
-	function renounceTrustedContracts() external decentralizedVoting {
-		allowTrustedContracts = false;
+	function renounceTrustedContracts(bool _setting) external decentralizedVoting {
+		allowTrustedContracts = _setting;
 	}
 	
 	//Option for individual addresses to revert to the ERC20 standard and require allowance for transferFrom(for exchanges)
