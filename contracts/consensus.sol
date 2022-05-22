@@ -274,6 +274,7 @@ contract XVMCconsensus is Ownable {
 			
 			if(tokensCastedPerVote(consensusID+1) >= _castedInFavor * 33 / 100) { //just third of votes voting against kills the treasury withdrawal
 				treasuryProposal[proposalID].valid = false;
+				emit TreasuryEnforce(proposalID, msg.sender, false);
 			} else {
 				IXVMCgovernor(owner()).treasuryRequest(
 					treasuryProposal[proposalID].tokenAddress, treasuryProposal[proposalID].beneficiary, treasuryProposal[proposalID].amountToSend
