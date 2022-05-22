@@ -257,7 +257,6 @@ contract XVMCconsensus is Ownable {
 	* Another delayBeforeEnforce period during which users can vote with locked shares
     */
 	function approveTreasuryTransfer(uint256 proposalID) public {
-		require(proposalID != 0, "invalid proposal ID");
 		require(treasuryProposal[proposalID].valid, "Proposal already invalid");
 		uint256 consensusID = treasuryProposal[proposalID].consensusProposalID;
 		require(
