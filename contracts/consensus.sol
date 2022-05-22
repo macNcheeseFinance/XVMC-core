@@ -269,12 +269,9 @@ contract XVMCconsensus is Ownable {
 		);
 		
 		uint256 _totalStaked = totalXVMCStaked();
-		if(treasuryProposal[proposalID].valueSacrificedForVote >= treasuryProposal[proposalID].valueSacrificedAgainst) {
-			uint256 _castedInFavor = highestConsensusVotes[consensusID];
-			require(
-				_castedInFavor >= _totalStaked * 15 / 100,
-					"15% weigted vote required to approve the proposal"
-			);
+		uint256 _castedInFavor = highestConsensusVotes[consensusID];
+		if(treasuryProposal[proposalID].valueSacrificedForVote >= treasuryProposal[proposalID].valueSacrificedAgainst &&
+				_castedInFavor >= _totalStaked * 15 / 100 ) {
 			
 			if(highestConsensusVotes[consensusID+1] >= _castedInFavor * 33 / 100) { //just third of votes voting against kills the treasury withdrawal
 				treasuryProposal[proposalID].valid = false;
