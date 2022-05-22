@@ -298,7 +298,7 @@ contract XVMCconsensus is Ownable {
      * Kills treasury transfer proposal if more than third of weighted vote(of total staked)
      */
 	function killTreasuryTransferProposal(uint256 proposalID) external {
-		require(!treasuryProposal[proposalID].valid, "Proposal already invalid");
+		require(treasuryProposal[proposalID].valid, "Proposal already invalid");
 		uint256 consensusID = treasuryProposal[proposalID].consensusProposalID;
 		
         require(
