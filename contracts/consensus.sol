@@ -79,6 +79,7 @@ contract XVMCconsensus is Ownable {
 	
 	uint256 public immutable goldenRatio = 1618; //1.618 is the golden ratio
     address public immutable token; //XVMC token (address)
+	uint256 public governorCount; //count number of proposals
 	
     //addresses for time-locked deposits(autocompounding pools)
     address public acPool1;
@@ -318,6 +319,7 @@ contract XVMCconsensus is Ownable {
 	
 	
     function proposeGovernor(address _newGovernor) external {
+		governorCount++;
         IERC20(token).safeTransferFrom(msg.sender, owner(), IXVMCgovernor(owner()).costToVote() * 100);
 		
 		consensusProposal.push(
@@ -418,6 +420,10 @@ contract XVMCconsensus is Ownable {
     function changeGovernor() external {
 		_transferOwnership(IToken(token).governor());
     }
+
+	function treasuryRequestsCount() external view returns (uint256) {
+		return treasuryProposal.length;
+	}
 
     /**
      * Returns total XVMC staked accross all pools.
