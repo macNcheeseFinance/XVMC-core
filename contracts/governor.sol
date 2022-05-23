@@ -113,6 +113,8 @@ contract XVMCgovernor {
     uint256 public immutable acPool4ID = 5;
     uint256 public immutable acPool5ID = 6;
     uint256 public immutable acPool6ID = 7;
+	
+	uint256 public immutable nftStakingPoolID = 10;
     
     mapping(address => uint256) private _rollBonus;
 	
