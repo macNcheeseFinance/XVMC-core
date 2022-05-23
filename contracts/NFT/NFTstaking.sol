@@ -416,8 +416,16 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     function setPoolPayout(address _poolAddress, uint256 _amount, uint256 _minServe) external {
         require(msg.sender == IGovernance(admin).nftAllocationContract(), "must be set by allocation contract");
 		require(_amount <= 10000, "out of range");
-        poolPayout[_poolAddress].amount = _amount;
-        poolPayout[_poolAddress].minServe = _minServe; //mandatory lockup(else stake for 5yr, withdraw with 82% penalty and receive 18%)
+		if(_poolAddress == address(0)) {
+			defaultDirectPayout = _amount;
+		} else if (_poolAddress == address(1)) {
+			defaultHarvestThreshold = _amount;
+		} else if (_poolAddress == address(2)) {
+			defaultFeeToPay = _amount;
+		} else {
+			poolPayout[_poolAddress].amount = _amount;
+        	poolPayout[_poolAddress].minServe = _minServe; //mandatory lockup(else stake for 5yr, withdraw with 82% penalty and receive 18%)
+		}
     }
     
     function updateSettings(address _defaultHarvest, uint256 _threshold, uint256 _defaultFee, uint256 _defaultDirectHarvest) external adminOnly {
