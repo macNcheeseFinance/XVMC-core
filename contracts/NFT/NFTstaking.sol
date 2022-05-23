@@ -413,8 +413,9 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 
     //need to set pools before launch or perhaps during contract launch
     //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
-    function setPoolPayout(address _poolAddress, uint256 _amount, uint256 _minServe) external adminOnly {
-        require(_amount <= 10000, "out of range");
+    function setPoolPayout(address _poolAddress, uint256 _amount, uint256 _minServe) external {
+        require(msg.sender == IGovernance(admin).nftAllocationContract(), "must be set by allocation contract");
+		require(_amount <= 10000, "out of range");
         poolPayout[_poolAddress].amount = _amount;
         poolPayout[_poolAddress].minServe = _minServe; //mandatory lockup(else stake for 5yr, withdraw with 82% penalty and receive 18%)
     }
