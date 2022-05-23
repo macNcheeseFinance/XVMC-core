@@ -2,18 +2,40 @@
 
 pragma solidity 0.8.0;
 
+import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./libs/custom/IERC20.sol";
+import "./libs/standard/Address.sol";
+import "./libs/custom/SafeERC20.sol";
+
+
 interface IToken {
     function governor() external view returns (address);
+	function trustedContract(address _contract) external view returns (bool);
 }
 interface IAllocation {
     function nftAllocation(address _tokenAddress, uint256 _tokenID) external view returns (uint256);
 }
 interface IXVMCgovernor {
     function consensusContract() external view returns (address);
+	function nftStakingPoolID() external view returns (uint256);
+	function masterchef() external view returns (address);
+	function delayBeforeEnforce() external view returns (uint256);
+	function costToVote() external view returns (uint256);
 }
 interface IConsensus {
 	function totalXVMCStaked() external view returns(uint256);
 	function tokensCastedPerVote(uint256 _forID) external view returns(uint256);
+}
+interface INFTstaking {
+	function setPoolPayout(address _poolAddress, uint256 _amount, uint256 _minServe) external;
+}
+interface IMasterChef {
+    function poolInfo(uint256) external returns (address, uint256, uint256, uint256, uint16);
+	function massUpdatePools() external;
+}
+interface IDummy {
+	function owner() external view returns (address);
 }
 
 /*
@@ -26,30 +48,49 @@ interface IConsensus {
  * And this contract looks up the actual allocation number through the valid allocation contract
  * Can contain a batch/list of NFTs, process for changing allocations, etc...
 */
-contract xvmcNFTallocationProxy {
+contract xvmcNFTallocationProxy is Ownable {
+	using SafeERC20 for IERC20;
+
     struct PendingContract {
         bool isValid;
         uint256 timestamp;
         uint256 votesCommitted;
     }
-    address public immutable XVMC;
+
+    struct ProposalStructure {
+        bool valid;
+        uint256 firstCallTimestamp;
+        uint256 valueSacrificedForVote;
+		uint256 valueSacrificedAgainst;
+		uint256 delay;
+        address poolAddress;
+        uint256 payoutAmount;
+		uint256 minServe; //minimum time required to serve before withdrawal
+    }
+
+	ProposalStructure[] public payoutProposal;
+
+    address public immutable token;
 
     uint256 public approveThreshold = 100; // percentage required to approve (100=10%)
     uint256 public rejectThreshold = 500; // percentage required to reject (of maximum vote allocated)
     uint256 public rejectionPeriod = 7 days; // period during which the allocation contract can be rejected(after approval)
 
-    constructor(address _xvmc) {
-        XVMC = _xvmc;
-    }
-
     mapping(address => bool) public allocationContract; 
     mapping(address => PendingContract) public pendingContract; 
     
+    constructor(address _xvmc) {
+        token = _xvmc;
+    }
 
     event SetAllocationContract(address contractAddress, bool setting);
     event SetPendingContract(address contractAddress, uint256 uintValue, bool setting);
     event UpdateVotes(address contractAddress, uint256 uintValue, uint256 weightedVote);
     event NotifyVote(address _contract, uint256 uintValue, address enforcer);
+
+	event SetPoolPayout(uint256 proposalID, uint256 depositingTokens, address forPool, uint256 payoutAmount, uint256 minServe, address enforcer, uint256 delay);
+	event AddVotes(uint256 proposalID, address enforcer, uint256 tokensSacrificed, bool _for);
+	event EnforceProposal(uint256 proposalID, address enforcer, bool _isSuccess);
 
     function getAllocation(address _tokenAddress, uint256 _tokenID, address _allocationContract) external view returns (uint256) {
         if(allocationContract[_allocationContract]) {
@@ -68,7 +109,7 @@ contract xvmcNFTallocationProxy {
         require(!pendingContract[_contract].isValid, "already proposing");
         uint256 _contractUint = addressToUint256(_contract);
         require(!pendingContract[address(uint160(_contractUint-1))].isValid, "trying to submit veto as a proposal");
-        address _consensusContract = IXVMCgovernor(IToken(XVMC).governor()).consensusContract();
+        address _consensusContract = IXVMCgovernor(IToken(token).governor()).consensusContract();
 
         uint256 _threshold = IConsensus(_consensusContract).totalXVMCStaked() * approveThreshold / 1000;
         uint256 _weightedVote = IConsensus(_consensusContract).tokensCastedPerVote(_contractUint);
@@ -86,7 +127,7 @@ contract xvmcNFTallocationProxy {
         require(pendingContract[_contract].isValid, "proposal not valid");
   
         uint256 _contractUint = addressToUint256(_contract);
-        address _consensusContract = IXVMCgovernor(IToken(XVMC).governor()).consensusContract();
+        address _consensusContract = IXVMCgovernor(IToken(token).governor()).consensusContract();
         uint256 _weightedVote = IConsensus(_consensusContract).tokensCastedPerVote(_contractUint);
 
         require(_weightedVote > pendingContract[_contract].votesCommitted, "can only update to higher vote count");
@@ -99,7 +140,7 @@ contract xvmcNFTallocationProxy {
     function rejectAllocationContract(address _contract) external {
         require(pendingContract[_contract].isValid, "proposal not valid");
         uint256 _contractUint = addressToUint256(_contract) + 1; //+1 to vote against
-        address _consensusContract = IXVMCgovernor(IToken(XVMC).governor()).consensusContract();
+        address _consensusContract = IXVMCgovernor(IToken(token).governor()).consensusContract();
 
         uint256 _threshold = pendingContract[_contract].votesCommitted * rejectThreshold / 1000;
         uint256 _weightedVote = IConsensus(_consensusContract).tokensCastedPerVote(_contractUint);
@@ -115,7 +156,7 @@ contract xvmcNFTallocationProxy {
         require(pendingContract[_contract].isValid && !allocationContract[_contract], "contract not approved or already approved");
         require(block.timestamp > (pendingContract[_contract].timestamp + rejectionPeriod), "must wait rejection period before approval");
         uint256 _contractUint = addressToUint256(_contract) + 1; //+1 to vote against
-        address _consensusContract = IXVMCgovernor(IToken(XVMC).governor()).consensusContract();
+        address _consensusContract = IXVMCgovernor(IToken(token).governor()).consensusContract();
 
         uint256 _threshold = pendingContract[_contract].votesCommitted * rejectThreshold / 1000;
         uint256 _weightedVote = IConsensus(_consensusContract).tokensCastedPerVote(_contractUint);
@@ -128,29 +169,101 @@ contract xvmcNFTallocationProxy {
         }
     }
 
+  /**
+     * Regulatory process for setting pool payout and min serve(basically to determine penalty 
+	 * depending on which pool the user is harvesting their earned interest into
+    */
+    function initiatePoolPayout(uint256 depositingTokens, address _forPoolAddress, uint256 _payout, uint256 _minServe, uint256 delay) external { 
+		require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
+    	require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "minimum cost to vote");
+		require(IToken(token).trustedContract(_forPoolAddress), "pools/trusted contracts only");
+    
+    	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
+    	payoutProposal.push(
+    	    ProposalStructure(true, block.timestamp, depositingTokens, 0, delay, _forPoolAddress, _payout, _minServe)
+    	    );  
+    	    
+        emit SetPoolPayout(payoutProposal.length - 1, depositingTokens, _forPoolAddress, _payout, _minServe, msg.sender, delay);
+    }
+	function votePoolPayoutY(uint256 proposalID, uint256 withTokens) external {
+		require(payoutProposal[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+
+		payoutProposal[proposalID].valueSacrificedForVote+= withTokens;
+
+		emit AddVotes(proposalID, msg.sender, withTokens, true);
+	}
+	function votePoolPayoutN(uint256 proposalID, uint256 withTokens, bool withAction) external {
+		require(payoutProposal[proposalID].valid, "invalid");
+		
+		IERC20(token).safeTransferFrom(msg.sender, owner(), withTokens);
+
+		payoutProposal[proposalID].valueSacrificedAgainst+= withTokens;
+		if(withAction) { vetoPoolPayout(proposalID); }
+
+		emit AddVotes(proposalID, msg.sender, withTokens, false);
+	}
+    function vetoPoolPayout(uint256 proposalID) public {
+    	require(payoutProposal[proposalID].valid, "already invalid"); 
+		require(payoutProposal[proposalID].firstCallTimestamp + payoutProposal[proposalID].delay < block.timestamp, "pending delay");
+		require(payoutProposal[proposalID].valueSacrificedForVote < payoutProposal[proposalID].valueSacrificedAgainst, "needs more votes");
+ 
+    	payoutProposal[proposalID].valid = false;  
+    	
+    	emit EnforceProposal(proposalID, msg.sender, false);
+    }
+
+    function executePoolPayout(uint256 proposalID) public {
+    	require(
+    	    payoutProposal[proposalID].valid &&
+    	    payoutProposal[proposalID].firstCallTimestamp + IXVMCgovernor(owner()).delayBeforeEnforce() + payoutProposal[proposalID].delay < block.timestamp,
+    	    "conditions not met"
+    	);
+
+		if(payoutProposal[proposalID].valueSacrificedForVote >= payoutProposal[proposalID].valueSacrificedAgainst) {
+			uint256 _poolID = IXVMCgovernor(owner()).nftStakingPoolID(); //get NFT staking pool ID from governor
+			address _chef = IXVMCgovernor(owner()).masterchef(); //masterchef staking contract address
+			(address dummyToken, , , ,) = IMasterChef(_chef).poolInfo(_poolID); //get dummy token address
+			address _stakingContract = IDummy(dummyToken).owner(); //NFT staking contract is the owner of the dummy token
+
+			INFTstaking(_stakingContract).setPoolPayout(payoutProposal[proposalID].poolAddress, payoutProposal[proposalID].payoutAmount, payoutProposal[proposalID].minServe);
+
+			payoutProposal[proposalID].valid = false; 
+			
+			emit EnforceProposal(proposalID, msg.sender, true);
+		} else {
+			vetoPoolPayout(proposalID);
+		}
+    }
+
     //allocation contract can also be set through the governing address
     function setAllocationContract(address _contract, bool _setting) external {
-        require(msg.sender == IToken(XVMC).governor(), "only governor");
+        require(msg.sender == IToken(token).governor(), "only governor");
         allocationContract[_contract] = _setting;
 
         emit SetAllocationContract(_contract, _setting);
     }
 
     function setApproveThreshold(uint256 _threshold) external {
-        require(msg.sender == IToken(XVMC).governor(), "only governor");
+        require(msg.sender == IToken(token).governor(), "only governor");
         approveThreshold = _threshold;
     }
     function setRejectThreshold(uint256 _threshold) external {
-        require(msg.sender == IToken(XVMC).governor(), "only governor");
+        require(msg.sender == IToken(token).governor(), "only governor");
         rejectThreshold = _threshold;
     }
     function setRejectionPeriod(uint256 _period) external {
-        require(msg.sender == IToken(XVMC).governor(), "only governor");
+        require(msg.sender == IToken(token).governor(), "only governor");
         rejectionPeriod = _period;
     }
 
     function addressToUint256(address _address) public pure returns (uint256) {
         return(uint256(uint160(_address)));
     }
+
+	function changeGovernor() external {
+		_transferOwnership(IToken(token).governor());
+	}
 
 }
