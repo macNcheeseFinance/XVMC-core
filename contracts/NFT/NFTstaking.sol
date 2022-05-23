@@ -415,12 +415,13 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
     function setPoolPayout(address _poolAddress, uint256 _amount, uint256 _minServe) external {
         require(msg.sender == IGovernance(admin).nftAllocationContract(), "must be set by allocation contract");
-		require(_amount <= 10000, "out of range");
 		if(_poolAddress == address(0)) {
+			require(_amount <= 10000, "out of range");
 			defaultDirectPayout = _amount;
 		} else if (_poolAddress == address(1)) {
 			defaultHarvestThreshold = _amount;
 		} else if (_poolAddress == address(2)) {
+			require(_amount <= 1000, "out of range"); //max 10%
 			defaultFeeToPay = _amount;
 		} else {
 			poolPayout[_poolAddress].amount = _amount;
