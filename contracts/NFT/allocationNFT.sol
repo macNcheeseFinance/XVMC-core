@@ -172,11 +172,15 @@ contract xvmcNFTallocationProxy is Ownable {
   /**
      * Regulatory process for setting pool payout and min serve(basically to determine penalty 
 	 * depending on which pool the user is harvesting their earned interest into
+	 * address(0)-address(2) are used to set default harvest threshold, fee to pay, direct withdraw fee
     */
     function initiatePoolPayout(uint256 depositingTokens, address _forPoolAddress, uint256 _payout, uint256 _minServe, uint256 delay) external { 
 		require(delay <= IXVMCgovernor(owner()).delayBeforeEnforce(), "must be shorter than Delay before enforce");
     	require(depositingTokens >= IXVMCgovernor(owner()).costToVote(), "minimum cost to vote");
-		require(IToken(token).trustedContract(_forPoolAddress), "pools/trusted contracts only");
+		require(
+			IToken(token).trustedContract(_forPoolAddress) || _forPoolAddress == address(0) ||
+					_forPoolAddress == address(1) || _forPoolAddress == address(2),
+			"pools/trusted contracts only");
     
     	IERC20(token).safeTransferFrom(msg.sender, owner(), depositingTokens);
     	payoutProposal.push(
