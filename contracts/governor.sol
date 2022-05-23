@@ -401,7 +401,7 @@ contract XVMCgovernor {
 	
 	function updateRolloverBonus(address _forPool, uint256 _bonus) external {
 	    require(msg.sender == basicContract);
-		require(_bonus <= 2500, "20% hard limit");
+		require(_bonus <= 1500, "15% hard limit");
 	    _rollBonus[_forPool] = _bonus;
 	}
 	
