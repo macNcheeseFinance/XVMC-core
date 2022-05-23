@@ -424,6 +424,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 			require(_amount <= 1000, "out of range"); //max 10%
 			defaultFeeToPay = _amount;
 		} else {
+			require(_amount <= 10000, "out of range"); 
 			poolPayout[_poolAddress].amount = _amount;
         	poolPayout[_poolAddress].minServe = _minServe; //mandatory lockup(else stake for 5yr, withdraw with 82% penalty and receive 18%)
 		}
