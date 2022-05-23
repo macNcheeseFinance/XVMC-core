@@ -3,15 +3,18 @@
 
 pragma solidity 0.8.0;
 
-import "../libs/standard/IERC20.sol";
+import "./libs/standard/IERC20.sol";
 
 interface IXVMCgovernor {
-    function acPool1() external returns (address);
-    function acPool2() external returns (address);
-    function acPool3() external returns (address);
-    function acPool4() external returns (address);
-    function acPool5() external returns (address);
-    function acPool6() external returns (address);
+    function acPool1() external view returns (address);
+    function acPool2() external view returns (address);
+    function acPool3() external view returns (address);
+    function acPool4() external view returns (address);
+    function acPool5() external view returns (address);
+    function acPool6() external view returns (address);
+    function nftAllocationContract () external view returns (address);
+	function nftStakingPoolID() external view returns (uint256);
+	function masterchef() external view returns (address);
 }
 
 interface IToken {
@@ -31,6 +34,7 @@ interface IGovernor {
     function treasuryWallet() external view returns (address);
     function nftWallet() external view returns (address);
     function oldChefOwner() external returns (address);
+	function nftAllocationContract() external view returns (address);
 }
 
 interface IChange {
@@ -43,8 +47,16 @@ interface IChange {
 interface IDummy {
     function updateOwnerToGovernor() external;
     function updateOwner() external;
+	function owner() external view returns (address);
 }
 
+interface INFTstaking {
+	function setAdmin() external;
+}
+
+interface IMasterChef {
+    function poolInfo(uint256) external returns (address, uint256, uint256, uint256, uint16);
+}
 contract XVMCsyncContracts {
     address public immutable tokenXVMC;
     
@@ -68,6 +80,7 @@ contract XVMCsyncContracts {
         updateDummysOwner(false);
         updateOldChef(true);
         updateMasterchef();
+		nftStaking();
     }
 
     function updatePools() public {
@@ -126,6 +139,20 @@ contract XVMCsyncContracts {
         IDummy(address(IacPool(acPool6).dummyToken())).updateOwnerToGovernor();
     }
     
+    //updates allocation contract owner, nft staking(admin), and dummy token
+    function nftStaking() public {
+        address governor = IToken(tokenXVMC).governor();
+
+        uint256 _poolID = IXVMCgovernor(governor).nftStakingPoolID(); //get NFT staking pool ID from governor
+		address _chef = IXVMCgovernor(governor).masterchef(); //masterchef staking contract address
+		(address dummyToken, , , ,) = IMasterChef(_chef).poolInfo(_poolID); //get dummy token address
+		address _stakingContract = IDummy(dummyToken).owner(); //NFT staking contract is the owner of the dummy token
+
+        IChange(IGovernor(governor).nftAllocationContract()).changeGovernor();
+        INFTstaking(_stakingContract).setAdmin();
+		IDummy(dummyToken).updateOwnerToGovernor();
+    }
+    
     function updateOldChef(bool _dummyToken) public {
         address governor = IToken(tokenXVMC).governor();
         address _oldChefOwner = IGovernor(governor).oldChefOwner();
@@ -139,6 +166,8 @@ contract XVMCsyncContracts {
     }
     
     function updateMasterchef() public {
+		address governor = IToken(tokenXVMC).governor();
+
         IChange(IGovernor(governor).farmContract()).setMasterchef();
         IChange(IGovernor(governor).fibonacceningContract()).setMasterchef();
     }
