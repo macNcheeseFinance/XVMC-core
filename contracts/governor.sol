@@ -41,6 +41,7 @@ interface IOldChef {
 interface IConsensus {
 	function totalXVMCStaked() external view returns(uint256);
 	function tokensCastedPerVote(uint256 _forID) external view returns(uint256);
+	function isGovInvalidated(address _failedGov) external view returns(bool, bool);
 }
 
 interface IPolygonMultisig {
@@ -347,10 +348,17 @@ contract XVMCgovernor {
         require(msg.sender == consensusContract);
         newGovernorRequestBlock = block.number;
         eligibleNewGovernor = beneficiary;
-        if(!changeGovernorActivated) {
-            changeGovernorActivated = true;
-        }
+        changeGovernorActivated = true;
     }
+	
+	function governorRejected() external {
+		require(changeGovernorActivated, "not active");
+		
+		(bool _govInvalidated, ) = IConsensus(consensusContract).isGovInvalidated(eligibleNewGovernor);
+		if(_govInvalidated) {
+			changeGovernorActivated = false;
+		}
+	}
 
 	function treasuryRequest(address _tokenAddr, address _recipient, uint256 _amountToSend) external {
 		require(msg.sender == consensusContract);
