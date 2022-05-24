@@ -173,7 +173,10 @@ contract XVMCtimeDeposit is ReentrancyGuard {
         admin = IMasterChef(masterchef).owner();
         treasury = IMasterChef(masterchef).feeAddress();
     }
-	
+    
+    function updateAllocationContract() external {
+        allocationContract = IGovernance(admin).nftAllocationContract();
+    }
 
     /**
      * @notice Withdraws the NFT and harvests earnings
@@ -443,7 +446,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     function rebalanceNFT(address _staker, uint256 _stakeID, address _allocationContract) external {
 		harvest();
         UserInfo storage user = userInfo[_staker][_stakeID];
-        uint256 _alloc = INFTallocation(IGovernance(admin).nftAllocationContract()).nftAllocation(user.tokenAddress, user.tokenID, _allocationContract);
+        uint256 _alloc = INFTallocation(allocationContract).nftAllocation(user.tokenAddress, user.tokenID, _allocationContract);
         if(_alloc == 0) { //no longer valid, anyone can push out and withdraw NFT to the owner (copy+paste withdraw option)
             require(_stakeID < userInfo[_staker].length, "invalid stake ID");
 
@@ -489,7 +492,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     //need to set pools before launch or perhaps during contract launch
     //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
     function setPoolPayout(address _poolAddress, uint256 _amount, uint256 _minServe) external {
-        require(msg.sender == IGovernance(admin).nftAllocationContract(), "must be set by allocation contract");
+        require(msg.sender == allocationContract, "must be set by allocation contract");
 		if(_poolAddress == address(0)) {
 			require(_amount <= 10000, "out of range");
 			defaultDirectPayout = _amount;
