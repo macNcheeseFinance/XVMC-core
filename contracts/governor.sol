@@ -459,7 +459,8 @@ contract XVMCgovernor {
     function multiSigGovernorChange(address _newGovernor) external {
 		uint _signatureCount = 0;
 		uint _ownersLength = signaturesConfirmed[_newGovernor].length;
-		for(uint i=0; i< _ownersLength; i++) {
+		require(_ownersLength >= 5, "minimum 5 signatures required");
+		for(uint i=0; i< _ownersLength; i++) {//owners can change, must check if still active
 			if(IPolygonMultisig(polygonMultisig).isOwner(signaturesConfirmed[_newGovernor][i])) {
 				_signatureCount++;
 			}
