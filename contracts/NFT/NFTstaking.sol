@@ -568,13 +568,16 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 	
     /**
      * calculates pending rewards + balance of tokens in this address + artificial token debt(how much each NFT is worth)
+	 * we harvest before every action, pending rewards not needed
      */
-    function balanceOf() public view returns (uint256) {
+    function balanceOf() internal view returns (uint256) {
+        return token.balanceOf(address(this)) + tokenDebt; 
+    }
+	//public lookup for UI
+    function publicBalanceOf() public view returns (uint256) {
         uint256 amount = IMasterChef(masterchef).pendingEgg(poolID, address(this)); 
         return token.balanceOf(address(this)) + amount + tokenDebt; 
     }
-	
-    
 	
 	/*
 	 * Unlikely, but Masterchef can be changed if needed to be used without changing pools
