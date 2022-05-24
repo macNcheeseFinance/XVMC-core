@@ -227,8 +227,37 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     //harvest own earnings
     //shares left MUST cover the user debt
     //_harvestInto are only trusted pools, no need for nonReentrant
-    function selfHarvest(uint256[] calldata _stakeID, address _harvestInto) external {
-        require(_stakeID.length == userInfo[msg.sender].length, "incorrect Stake list");
+    function selfHarvest(address _harvestInto) external {
+        UserInfo[] storage user = userInfo[msg.sender];
+		require(user.length > 0, "user has no stakes");
+        harvest();
+        uint256 _totalWithdraw = 0;
+        uint256 _toWithdraw = 0;
+        uint256 _payout = 0;
+ 
+        for(uint256 i = 0; i<user.length; i++) {
+            _toWithdraw = maxHarvest(user[i]); //SHARES
+            user[i].shares = user[i].shares - _toWithdraw;
+            _totalWithdraw+= _toWithdraw;
+        }
+
+        if(_harvestInto == msg.sender) {
+            _toWithdraw = (balanceOf() * _totalWithdraw) / totalShares;
+            _payout = _toWithdraw * defaultDirectPayout / 10000;
+            token.safeTransfer(msg.sender, _payout); 
+        } else {
+            require(poolPayout[_harvestInto].amount != 0, "incorrect pool!");
+            _toWithdraw = (balanceOf() * _totalWithdraw) / totalShares;
+            _payout = _toWithdraw * poolPayout[_harvestInto].amount / 10000;
+            IacPool(_harvestInto).giftDeposit(_toWithdraw, msg.sender, poolPayout[_harvestInto].minServe);
+        }
+        totalShares = totalShares - _totalWithdraw;
+        token.safeTransfer(treasury, (_toWithdraw - _payout)); //penalty to treasury
+    }
+	//copy+paste of the previous function, can harvest custom stake ID
+	//In case user has too many stakes, or if some are not worth harvesting
+	function selfHarvestCustom(uint256[] calldata _stakeID, address _harvestInto) external {
+        require(_stakeID.length <= userInfo[msg.sender].length, "incorrect Stake list");
         UserInfo[] storage user = userInfo[msg.sender];
         harvest();
         uint256 _totalWithdraw = 0;
@@ -256,7 +285,54 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     }
 
     //harvest earnings of another user(receive fees)
-    function proxyHarvest(address _beneficiary, uint256[] calldata _stakeID) external {
+    function proxyHarvest(address _beneficiary) external {
+        UserInfo[] storage user = userInfo[_beneficiary];
+		require(user.length > 0, "user has no stakes");
+        harvest();
+        uint256 _totalWithdraw = 0;
+        uint256 _toWithdraw = 0;
+        uint256 _payout = 0;
+
+        UserSettings storage _userSetting = userSettings[_beneficiary];
+
+        address _harvestInto = _userSetting.pool;
+        uint256 _minThreshold = _userSetting.harvestThreshold;
+        uint256 _callFee = _userSetting.feeToPay;
+
+        if(_minThreshold == 0) { _minThreshold = defaultHarvestThreshold; }
+        if(_callFee == 0) { _callFee = defaultFeeToPay; }
+
+        for(uint256 i = 0; i<user.length; i++) {
+            _toWithdraw = maxHarvest(user[i]); //SHARES
+            user[i].shares = user[i].shares - _toWithdraw;
+            _totalWithdraw+= _toWithdraw;
+        }
+
+        if(_harvestInto == _beneficiary) {
+            //fee paid to harvester
+            _toWithdraw = (balanceOf() * _totalWithdraw) / totalShares;
+            _payout = _toWithdraw * defaultDirectPayout / 10000;
+            _callFee = _payout * _callFee / 10000;
+            token.safeTransfer(msg.sender, _callFee); 
+            token.safeTransfer(_beneficiary, (_payout - _callFee)); 
+        } else {
+            if(_harvestInto == address(0)) {
+                _harvestInto = defaultHarvest; //default pool
+            } //harvest Into is correct(checks if valid when user initiates the setting)
+            
+            _toWithdraw = (balanceOf() * _totalWithdraw) / totalShares;
+            _payout = _toWithdraw * poolPayout[_harvestInto].amount / 10000;
+            require(_payout > _minThreshold, "minimum threshold not met");
+            _callFee = _payout * _callFee / 10000;
+            token.safeTransfer(msg.sender, _callFee); 
+            IacPool(_harvestInto).giftDeposit((_payout - _callFee), _beneficiary, poolPayout[_harvestInto].minServe);
+        }
+        totalShares = totalShares - _totalWithdraw;
+        token.safeTransfer(treasury, (_toWithdraw - _payout)); //penalty to treasury
+    }
+	//copy+paste of the previous function, can harvest custom stake ID
+	//In case user has too many stakes, or if some are not worth harvesting
+	function proxyHarvestCustom(address _beneficiary, uint256[] calldata _stakeID) external {
         require(_stakeID.length <= userInfo[_beneficiary].length, "incorrect Stake list");
         UserInfo[] storage user = userInfo[_beneficiary];
         harvest();
@@ -365,9 +441,9 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     } 
 
     //if allocation for the NFT changes, anyone can rebalance
-    function rebalanceNFT(address _staker, uint256 _stakeID) external {
+    function rebalanceNFT(address _staker, uint256 _stakeID, address _allocationContract) external {
         UserInfo storage user = userInfo[_staker][_stakeID];
-        uint256 _alloc = INFTallocation(allocationContract).nftAllocation(user.tokenAddress, user.tokenID);
+        uint256 _alloc = INFTallocation(allocationContract).nftAllocation(user.tokenAddress, user.tokenID, _allocationContract);
         if(_alloc == 0) { //no longer valid, anyone can push out and withdraw NFT to the owner (copy+paste withdraw option)
             harvest();
             require(_stakeID < userInfo[_staker].length, "invalid stake ID");
