@@ -399,6 +399,8 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 	function votingCredit(uint256 _shares, uint256 _stakeID) public {
         require(votingCreditAddress != address(0), "disabled");
         require(_stakeID < userInfo[msg.sender].length, "invalid stake ID");
+		
+		harvest();
         
         UserInfo storage user = userInfo[msg.sender][_stakeID];
         require(_shares < maxHarvest(user), "insufficient shares");
@@ -416,12 +418,14 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 	function cashoutAllToCredit() external {
         require(votingCreditAddress != address(0), "disabled");
         require(userInfo[msg.sender].length > 0, "no active stakes");
+		
+		harvest();
 
         uint256 _toWithdraw = 0;
         uint256 _totalWithdraw = 0;
         UserInfo[] storage user = userInfo[msg.sender];
 
-        for(uint256 i=0; i<userInfo[msg.sender].length; i++) {
+        for(uint256 i=0; i<user.length; i++) {
             _toWithdraw = maxHarvest(user[i]); //SHARES
             user[i].shares = user[i].shares - _toWithdraw;
             _totalWithdraw+= _toWithdraw;
@@ -437,10 +441,10 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 
     //if allocation for the NFT changes, anyone can rebalance
     function rebalanceNFT(address _staker, uint256 _stakeID, address _allocationContract) external {
+		harvest();
         UserInfo storage user = userInfo[_staker][_stakeID];
         uint256 _alloc = INFTallocation(IGovernance(admin).nftAllocationContract()).nftAllocation(user.tokenAddress, user.tokenID, _allocationContract);
         if(_alloc == 0) { //no longer valid, anyone can push out and withdraw NFT to the owner (copy+paste withdraw option)
-            harvest();
             require(_stakeID < userInfo[_staker].length, "invalid stake ID");
 
             uint256 currentAmount = (balanceOf() * (maxHarvest(user))) / (totalShares);
