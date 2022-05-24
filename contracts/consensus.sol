@@ -30,6 +30,8 @@ interface IXVMCgovernor {
     function acPool4() external view returns (address);
     function acPool5() external view returns (address);
     function acPool6() external view returns (address);
+    
+    function governorRejected() external;
 }
 
 interface IacPool {
@@ -376,7 +378,7 @@ contract XVMCconsensus is Ownable {
 	 * Note: The proposal IDs here are for the consensus ID
 	 * After rejecting, call the governorRejected in governing contract(sets activated setting to false)
      */
-    function vetoGovernor(uint256 proposalID) external {
+    function vetoGovernor(uint256 proposalID, bool _withUpdate) external {
         require(proposalID % 2 == 1, "Invalid proposal ID");
         require(isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].hasPassed &&
 					!isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated);
@@ -385,15 +387,19 @@ contract XVMCconsensus is Ownable {
               isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated = true;
 			  emit ChangeGovernor(proposalID, msg.sender, false);
         }
+		
+		if(_withUpdate) { IXVMCgovernor(owner()).governorRejected(); }
     }
 	//even if not approved, can be cancled at any time if 25% of weighted votes go AGAINST
-    function vetoGovernor2(uint256 proposalID) external {
+    function vetoGovernor2(uint256 proposalID, bool _withUpdate) external {
         require(proposalID % 2 == 1, "Invalid proposal ID");
 
         if(tokensCastedPerVote(proposalID+1) >= totalXVMCStaked() * 25 / 100) { //25% of weighted total vote AGAINST kills the proposal as well
               isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated = true;
 			  emit ChangeGovernor(proposalID, msg.sender, false);
         }
+		
+		if(_withUpdate) { IXVMCgovernor(owner()).governorRejected(); }
     }
     function enforceGovernor(uint256 proposalID) external {
         require(proposalID % 2 == 1, "invalid proposal ID"); //proposal ID = 0 is neutral position and not allowed(%2 applies)
