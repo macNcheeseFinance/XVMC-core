@@ -491,20 +491,18 @@ contract XVMCgovernor {
 	
 	function unSignMultisig(address _newGovernor) external {
 		require(alreadySigned[msg.sender][_newGovernor], "not signed");
-		uint _ownersLength = signaturesConfirmed[_newGovernor].length;
-		
-		for(uint i=0; i< _ownersLength; i++) {
-			if(signaturesConfirmed[_newGovernor][i] == msg.sender) {
-				alreadySigned[msg.sender][_newGovernor] = false;
-				if(i != _ownersLength-1) {
-					signaturesConfirmed[_newGovernor][i] = signaturesConfirmed[_newGovernor][_ownersLength-1];
-					signaturesConfirmed[_newGovernor].pop();
-				} else {
-					signaturesConfirmed[_newGovernor].pop();
-				}
-				emit Multisig(msg.sender, _newGovernor, false, uint256(uint160(_newGovernor)));
-			}
+		uint256 _lastIndex = signaturesConfirmed[_newGovernor].length - 1;
+		uint256 _index;
+		while(signaturesConfirmed[_newGovernor][_index] != msg.sender) {
+			_index++;
 		}
+		alreadySigned[msg.sender][_newGovernor] = false;
+		if(_index != _lastIndex) {
+			signaturesConfirmed[_newGovernor][_index] = signaturesConfirmed[_newGovernor][_lastIndex];
+		} 
+		signaturesConfirmed[_newGovernor].pop();
+		
+		emit Multisig(msg.sender, _newGovernor, false, uint256(uint160(_newGovernor)));
 	}
 	
 	function addressToUint256(address _address) external pure returns(uint256) {
