@@ -372,17 +372,21 @@ contract XVMCconsensus is Ownable {
     
     /**
      * After approved, still roughly 6 days to cancle the new governor, if less than 80% votes agree
+	 * 6 days at beginning in case we need to make changes on the fly, and later on the period should be increased
+	 * Note: The proposal IDs here are for the consensus ID
+	 * After rejecting, call the governorRejected in governing contract(sets activated setting to false)
      */
     function vetoGovernor(uint256 proposalID) external {
         require(proposalID % 2 == 1, "Invalid proposal ID");
-        require(isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].hasPassed);
+        require(isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].hasPassed &&
+					!isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated);
 
         if(tokensCastedPerVote(proposalID+1) >= tokensCastedPerVote(proposalID) / 5) {
               isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated = true;
 			  emit ChangeGovernor(proposalID, msg.sender, false);
         }
     }
-	//even if not approved, can be cancled at any time if 20% of weighted votes go AGAINST
+	//even if not approved, can be cancled at any time if 25% of weighted votes go AGAINST
     function vetoGovernor2(uint256 proposalID) external {
         require(proposalID % 2 == 1, "Invalid proposal ID");
 
