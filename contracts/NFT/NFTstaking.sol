@@ -173,11 +173,6 @@ contract XVMCtimeDeposit is ReentrancyGuard {
         admin = IMasterChef(masterchef).owner();
         treasury = IMasterChef(masterchef).feeAddress();
     }
-
-    //updates NFT allocation contract
-    function updateAllocationContract() external {
-        allocationContract = IGovernance(admin).nftAllocationContract();
-    }
 	
 
     /**
@@ -443,7 +438,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
     //if allocation for the NFT changes, anyone can rebalance
     function rebalanceNFT(address _staker, uint256 _stakeID, address _allocationContract) external {
         UserInfo storage user = userInfo[_staker][_stakeID];
-        uint256 _alloc = INFTallocation(allocationContract).nftAllocation(user.tokenAddress, user.tokenID, _allocationContract);
+        uint256 _alloc = INFTallocation(IGovernance(admin).nftAllocationContract()).nftAllocation(user.tokenAddress, user.tokenID, _allocationContract);
         if(_alloc == 0) { //no longer valid, anyone can push out and withdraw NFT to the owner (copy+paste withdraw option)
             harvest();
             require(_stakeID < userInfo[_staker].length, "invalid stake ID");
