@@ -347,6 +347,7 @@ contract XVMCconsensus is Ownable {
     function changeGovernor(uint256 proposalID) external { 
 		require(block.timestamp >= (consensusProposal[proposalID].timestamp + IXVMCgovernor(owner()).delayBeforeEnforce()), "Must wait delay before enforce");
         require(!(isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].isInvalidated), " alreadyinvalidated");
+		require(!(isGovInvalidated[consensusProposal[proposalID].beneficiaryAddress].hasPassed), " already passed");
 		require(consensusProposal.length > proposalID && proposalID % 2 == 1, "invalid proposal ID"); //can't be 0 either, but %2 solves that
         require(!(IXVMCgovernor(owner()).changeGovernorActivated()));
 		require(consensusProposal[proposalID].typeOfChange == 0);
