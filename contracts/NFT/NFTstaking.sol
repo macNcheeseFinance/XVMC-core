@@ -8,6 +8,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0/contracts/security/ReentrancyGuard.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/IERC721.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/IERC721Receiver.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 interface IMasterChef {
     function deposit(uint256 _pid, uint256 _amount) external;
@@ -41,7 +42,7 @@ interface INFTallocation {
  * XVMC NFT staking contract
  * !!! Warning: !!! Licensed under Business Source License 1.1 (BSL 1.1)
  */
-contract XVMCtimeDeposit is ReentrancyGuard {
+contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
     using SafeERC20 for IERC20;
 
     struct UserInfo {
@@ -91,9 +92,9 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 
     uint256 defaultDirectPayout = 500; //5% if withdrawn into wallet
 
-    event Deposit(address indexed tokenAddress, uint256 tokenID, address indexed depositor, uint256 shares, uint256 nftAllocation);
-    event Withdraw(address indexed sender, uint256 stakeID, address token, uint256 tokenID, uint256 shares, uint256 harvestAmount);
-    event UserSettingUpdate(address user, address poolAddress, uint256 threshold, uint256 feeToPay);
+    event Deposit(address indexed tokenAddress, uint256 indexed tokenID, address indexed depositor, uint256 shares, uint256 nftAllocation);
+    event Withdraw(address indexed sender, uint256 stakeID, address indexed token, uint256 indexed tokenID, uint256 shares, uint256 harvestAmount);
+    event UserSettingUpdate(address indexed user, address poolAddress, uint256 threshold, uint256 feeToPay);
 
     event AddVotingCredit(address indexed user, uint256 amount);
     /**
@@ -191,6 +192,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
         tokenDebt = tokenDebt - user.debt;
 
         uint256 _tokenID = user.tokenID;
+		address _tokenAddress = user.tokenAddress;
 
 		emit Withdraw(msg.sender, _stakeID, user.tokenAddress, _tokenID, user.shares, currentAmount);
 		
@@ -209,7 +211,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
         }
         token.safeTransfer(treasury, currentAmount); //penalty goes to governing contract
 
-        IERC721(user.tokenAddress).safeTransferFrom(address(this), msg.sender, _tokenID); //withdraw NFT
+        IERC721(_tokenAddress).safeTransferFrom(address(this), msg.sender, _tokenID); //withdraw NFT
     } 
 
     function setUserSettings(address _poolAddress, uint256 _harvestThreshold, uint256 _feeToPay, address _harvestInto) external {
@@ -455,6 +457,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
             tokenDebt = tokenDebt - user.debt;
 
             uint256 _tokenID = user.tokenID;
+			address _tokenAddress = user.tokenAddress;
 
             emit Withdraw(_staker, _stakeID, user.tokenAddress, _tokenID, user.shares, currentAmount);
             
@@ -475,7 +478,7 @@ contract XVMCtimeDeposit is ReentrancyGuard {
             }
             token.safeTransfer(treasury, currentAmount); //penalty goes to governing contract
 
-            IERC721(user.tokenAddress).safeTransferFrom(address(this), _staker, _tokenID); //withdraw NFT
+            IERC721(_tokenAddress).safeTransferFrom(address(this), _staker, _tokenID); //withdraw NFT
         } else if(_alloc != user.debt) { //change allocation
             uint256 _profitShares = maxHarvest(user); 
             uint256 _profitTokens = (balanceOf() * _profitShares) / totalShares;
