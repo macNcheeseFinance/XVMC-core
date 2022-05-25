@@ -18,12 +18,9 @@ contract XVMCtreasury is Ownable {
   /// @notice Event emitted when new transaction is executed
   event ExecuteTransaction(address indexed token, address indexed recipientAddress, uint256 value);
 
-  event ChangeOwner(address newOwner, uint256 time);
-
   constructor(address _XVMC) {
    token = _XVMC;
   }
-
 
   /**
    * Initiate withdrawal from treasury wallet
@@ -36,7 +33,6 @@ contract XVMCtreasury is Ownable {
 
     emit ExecuteTransaction(_token, _receiver, _value);
   }
-
 
   /**
    * Updates to the governor address(owner of masterchef(who owns the token))
