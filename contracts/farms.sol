@@ -320,12 +320,12 @@ contract XVMCfarms is Ownable {
 
             (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(8);
             IXVMCgovernor(owner()).setPool(
-                7, allocPoint * memeMultiplierDuringBoost / 10000, depositFeeBP, false
+                8, allocPoint * memeMultiplierDuringBoost / 10000, depositFeeBP, false
             );
 
             (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(9);
             IXVMCgovernor(owner()).setPool(
-                8, allocPoint * memeMultiplierDuringBoost / 10000, depositFeeBP, false
+                9, allocPoint * memeMultiplierDuringBoost / 10000, depositFeeBP, false
             );
             
             isReductionEnforced = true;
@@ -346,12 +346,12 @@ contract XVMCfarms is Ownable {
 
             (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(8);
             IXVMCgovernor(owner()).setPool(
-                7, allocPoint * 10000 / memeMultiplierDuringBoost, depositFeeBP, false
+                8, allocPoint * 10000 / memeMultiplierDuringBoost, depositFeeBP, false
             );
 
             (, allocPoint, , , depositFeeBP) = IMasterChef(masterchef).poolInfo(9);
             IXVMCgovernor(owner()).setPool(
-                8, allocPoint * 10000 / memeMultiplierDuringBoost, depositFeeBP, false
+                9, allocPoint * 10000 / memeMultiplierDuringBoost, depositFeeBP, false
             );
             
             isReductionEnforced = false;
