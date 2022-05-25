@@ -1,6 +1,8 @@
 pragma solidity ^0.8.0;
 //SPDX-License-Identifier: MIT
 
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
+
 /// @notice ERC20 token contract interface
 interface IERC20 {
     function transfer(address user, uint256 amount) external returns (bool);
@@ -10,9 +12,7 @@ interface IToken {
     function governor() external view returns (address);
 }
 
-contract XVMCtreasury {
-  /// @notice Owner address
-  address public owner;
+contract XVMCtreasury is Ownable {
   address public immutable token; // XVMC token(address)
 
   /// @notice Event emitted when new transaction is executed
@@ -22,12 +22,6 @@ contract XVMCtreasury {
 
   constructor(address _XVMC) {
    token = _XVMC;
-  }
-
-  /// @notice Modifier to make a function callable only by the owner.
-  modifier onlyOwner {
-    require(msg.sender == owner, 'Only owner');
-    _;
   }
 
 
@@ -48,9 +42,7 @@ contract XVMCtreasury {
    * Updates to the governor address(owner of masterchef(who owns the token))
    */
   function changeGovernor() external {
-    owner = IToken(token).governor();
-
-	emit ChangeOwner(owner, block.number);
+    _transferOwnership(IToken(token).governor());
   }
 
   /// @notice Fallback functions to receive native tokens
