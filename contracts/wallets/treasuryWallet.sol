@@ -1,7 +1,7 @@
 pragma solidity ^0.8.0;
 //SPDX-License-Identifier: MIT
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @notice ERC20 token contract interface
 interface IERC20 {
