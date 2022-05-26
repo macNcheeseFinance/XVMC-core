@@ -63,6 +63,8 @@ contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
         uint256 minServe;
     }
 
+	uint256 public constant MINIMUM_ALLOCATION = 10000;
+	
     IERC20 public immutable token; // XVMC token
 	
 	IERC20 public immutable oldToken = IERC20(0x6d0c966c8A09e354Df9C48b446A474CE3343D912);
@@ -76,15 +78,14 @@ contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
     mapping(address => PoolPayout) public poolPayout; //determines the percentage received depending on withdrawal option
  
 	uint256 public poolID; 
+    uint256 public totalShares;
     address public admin; //admin = governing contract!
     address public treasury; //penalties
     address public allocationContract; // PROXY CONTRACT for looking up allocations
 
     address public votingCreditAddress;
 
-	//start with artificial shares and debt that gets deleted after users deposit NFTs
-	uint256 public totalShares = 1e24;
-    uint256 public tokenDebt = 1e24; //sum of allocations of all deposited NFTs
+    uint256 public tokenDebt; //sum of allocations of all deposited NFTs
 
     //if user settings not set, use default
     address defaultHarvest; //pool address to harvest into
@@ -147,7 +148,15 @@ contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
         if (totalShares != 0) {
             currentShares = (_allocationAmount * totalShares) / (pool);
         } else {
+			require(_allocationAmount > MINIMUM_ALLOCATION, "Minimum allocation not reached");
             currentShares = _allocationAmount;
+            currentShares = currentShares - MINIMUM_ALLOCATION;
+            totalShares = MINIMUM_ALLOCATION;
+            userInfo[address(0)].push(
+                UserInfo(address(0), 0, MINIMUM_ALLOCATION, 0)
+            );
+
+            emit Deposit(address(0), 0, address(0), MINIMUM_ALLOCATION, 0);
         }
         
         totalShares = totalShares + currentShares;
@@ -492,13 +501,6 @@ contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
             totalShares = totalShares + user.shares;
         }
     }
-	
-	// If there was a singular deposit, user could've self-harvested causing totalShares going towards 0
-	function removeArtificialDeposit() external {
-		require(totalShares > 10 * 1e24, "insufficient deposits");
-		totalShares = totalShares - 1e24;
-		tokenDebt = tokenDebt - 1e24
-	}
 
     //need to set pools before launch or perhaps during contract launch
     //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
