@@ -76,14 +76,15 @@ contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
     mapping(address => PoolPayout) public poolPayout; //determines the percentage received depending on withdrawal option
  
 	uint256 public poolID; 
-    uint256 public totalShares;
     address public admin; //admin = governing contract!
     address public treasury; //penalties
     address public allocationContract; // PROXY CONTRACT for looking up allocations
 
     address public votingCreditAddress;
 
-    uint256 public tokenDebt; //sum of allocations of all deposited NFTs
+	//start with artificial shares and debt that gets deleted after users deposit NFTs
+	uint256 public totalShares = 1e24;
+    uint256 public tokenDebt = 1e24; //sum of allocations of all deposited NFTs
 
     //if user settings not set, use default
     address defaultHarvest; //pool address to harvest into
@@ -491,6 +492,13 @@ contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
             totalShares = totalShares + user.shares;
         }
     }
+	
+	// If there was a singular deposit, user could've self-harvested causing totalShares going towards 0
+	function removeArtificialDeposit() external {
+		require(totalShares > 10 * 1e24, "insufficient deposits");
+		totalShares = totalShares - 1e24;
+		tokenDebt = tokenDebt - 1e24
+	}
 
     //need to set pools before launch or perhaps during contract launch
     //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
