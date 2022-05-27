@@ -259,7 +259,7 @@ contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
             require(poolPayout[_harvestInto].amount != 0, "incorrect pool!");
             _toWithdraw = (balanceOf() * _totalWithdraw) / totalShares;
             _payout = _toWithdraw * poolPayout[_harvestInto].amount / 10000;
-            IacPool(_harvestInto).giftDeposit(_toWithdraw, msg.sender, poolPayout[_harvestInto].minServe);
+            IacPool(_harvestInto).giftDeposit(_payout, msg.sender, poolPayout[_harvestInto].minServe);
         }
         totalShares = totalShares - _totalWithdraw;
         token.safeTransfer(treasury, (_toWithdraw - _payout)); //penalty to treasury
@@ -288,7 +288,7 @@ contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
             require(poolPayout[_harvestInto].amount != 0, "incorrect pool!");
             _toWithdraw = (balanceOf() * _totalWithdraw) / totalShares;
             _payout = _toWithdraw * poolPayout[_harvestInto].amount / 10000;
-            IacPool(_harvestInto).giftDeposit(_toWithdraw, msg.sender, poolPayout[_harvestInto].minServe);
+            IacPool(_harvestInto).giftDeposit(_payout, msg.sender, poolPayout[_harvestInto].minServe);
         }
         totalShares = totalShares - _totalWithdraw;
         token.safeTransfer(treasury, (_toWithdraw - _payout)); //penalty to treasury
