@@ -276,15 +276,11 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 
 	
     /**
-     * Used to rebalance all pools at once from the governing contract
+     * Harvest pending rewards from masterchef
+	 * Governor pays the rewards for harvesting and rebalancing
      */
-    function harvest() external returns (uint256) {
-        uint256 bal = IMasterChef(masterchef).pendingEgg(poolID, address(this)); 
+    function harvest() external {
         IMasterChef(masterchef).withdraw(poolID, 0);
-
-        uint256 currentCallFee = bal.mul(callFee).div(10000);
-		
-        return currentCallFee;
     }
 
     
