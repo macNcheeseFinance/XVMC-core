@@ -14,7 +14,7 @@ interface IGovernor {
 	function treasuryWallet() external view returns (address);
 }
 
-contract XVMC is ERC20, ERC20Burnable, Ownable {
+contract XVMC is ERC20, ERC20Burnable, Ownable, ReentrancyGuard {
 	string private _name;
     string private _symbol;
 	
