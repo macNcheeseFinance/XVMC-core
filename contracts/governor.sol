@@ -13,7 +13,7 @@ interface IacPool {
     function setTreasury(address _treasury) external;
 	function addAndExtendStake(address _recipientAddr, uint256 _amount, uint256 _stakeID, uint256 _lockUpTokensInSeconds) external;
     function giftDeposit(uint256 _amount, address _toAddress, uint256 _minToServeInSecs) external;
-    function harvest() external returns (uint256);
+    function harvest() external;
 	function calculateHarvestXVMCRewards() external view returns (uint256);
 }
 
@@ -278,6 +278,15 @@ contract XVMCgovernor {
     	IMasterChef(masterchef).updatePool(acPool5ID); 
     	IMasterChef(masterchef).updatePool(acPool6ID); 
     }
+	
+	function harvestAll() public {
+		IacPool(acPool1).harvest();
+		IacPool(acPool2).harvest();
+		IacPool(acPool3).harvest();
+		IacPool(acPool4).harvest();
+		IacPool(acPool5).harvest();
+		IacPool(acPool6).harvest();
+	}
 
     /**
      * Harvests from all pools and rebalances rewards
@@ -285,9 +294,9 @@ contract XVMCgovernor {
     function harvest() external {
         require(msg.sender == tx.origin, "no proxy/contracts");
 
-        uint256 totalFee = IacPool(acPool1).harvest() + IacPool(acPool2).harvest() + IacPool(acPool3).harvest() +
-        					IacPool(acPool4).harvest() + IacPool(acPool5).harvest() + IacPool(acPool6).harvest();
+        uint256 totalFee = pendingHarvestRewards();
 
+		harvestAll();
         rebalancePools();
 		
 		lastHarvestedTime = block.timestamp;
@@ -297,7 +306,7 @@ contract XVMCgovernor {
 		emit Harvest(msg.sender, totalFee);
     }
 	
-	function pendingharvestRewards() external view returns (uint256) {
+	function pendingHarvestRewards() public view returns (uint256) {
 		uint256 totalRewards = IacPool(acPool1).calculateHarvestXVMCRewards() + IacPool(acPool2).calculateHarvestXVMCRewards() + IacPool(acPool3).calculateHarvestXVMCRewards() +
         					IacPool(acPool4).calculateHarvestXVMCRewards() + IacPool(acPool5).calculateHarvestXVMCRewards() + IacPool(acPool6).calculateHarvestXVMCRewards();
 		return totalRewards;
