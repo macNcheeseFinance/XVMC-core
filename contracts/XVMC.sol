@@ -5,6 +5,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
+https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0/contracts/security/ReentrancyGuard.sol
 
 interface IMasterchef {
 	function owner() external view returns (address);
@@ -131,7 +132,7 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	}
 	
 	//If tokens are accidentally sent to the contract. Could be returned to rightful owners at the mercy of XVMC governance
-	function transferStuckTokens(address _token) external {
+	function transferStuckTokens(address _token) external nonReentrant {
 		require(msg.sender == tx.origin);
 		require(_token != address(oldToken), "not allowed");
 		address treasuryWallet = IGovernor(governor()).treasuryWallet();
