@@ -94,9 +94,7 @@ contract XVMC is ERC20, ERC20Burnable, Ownable {
 	
 	//only owner can set trusted Contracts
 	function setTrustedContract(address _contractAddress, bool _setting) external decentralizedVoting {
-		require(allowTrustedContracts, "Trusted contracts have been renounced");
-
-		if(trustedContract[_contractAddress] != _setting) { //prevents messing up the count. Using if to avoid revert
+		if(allowTrustedContracts && trustedContract[_contractAddress] != _setting) { //prevents messing up the count. Using if to avoid revert
 			trustedContract[_contractAddress] = _setting;
 			_setting ? trustedContractCount++ : trustedContractCount--;
 			emit TrustedContract(_contractAddress, _setting);
