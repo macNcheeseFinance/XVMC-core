@@ -456,12 +456,11 @@ contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
 
     //if allocation for the NFT changes, anyone can rebalance
     function rebalanceNFT(address _staker, uint256 _stakeID, address _allocationContract) external {
+		require(_stakeID < userInfo[_staker].length, "invalid stake ID");
 		harvest();
         UserInfo storage user = userInfo[_staker][_stakeID];
         uint256 _alloc = INFTallocation(allocationContract).nftAllocation(user.tokenAddress, user.tokenID, _allocationContract);
         if(_alloc == 0) { //no longer valid, anyone can push out and withdraw NFT to the owner (copy+paste withdraw option)
-            require(_stakeID < userInfo[_staker].length, "invalid stake ID");
-
             uint256 currentAmount = (balanceOf() * (maxHarvest(user))) / (totalShares);
             totalShares = totalShares - user.shares;
             tokenDebt = tokenDebt - user.debt;
