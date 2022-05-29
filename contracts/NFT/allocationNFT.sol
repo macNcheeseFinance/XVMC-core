@@ -22,6 +22,7 @@ interface IXVMCgovernor {
 	function masterchef() external view returns (address);
 	function delayBeforeEnforce() external view returns (uint256);
 	function costToVote() external view returns (uint256);
+	function nftStakingContract() external view returns (address);
 }
 interface IConsensus {
 	function totalXVMCStaked() external view returns(uint256);
@@ -229,10 +230,7 @@ contract xvmcNFTallocationProxy is Ownable {
     	);
 
 		if(payoutProposal[proposalID].valueSacrificedForVote >= payoutProposal[proposalID].valueSacrificedAgainst) {
-			uint256 _poolID = IXVMCgovernor(owner()).nftStakingPoolID(); //get NFT staking pool ID from governor
-			address _chef = IXVMCgovernor(owner()).masterchef(); //masterchef staking contract address
-			(address dummyToken, , , ,) = IMasterChef(_chef).poolInfo(_poolID); //get dummy token address
-			address _stakingContract = IDummy(dummyToken).owner(); //NFT staking contract is the owner of the dummy token
+			address _stakingContract = IXVMCgovernor(owner()).nftStakingContract();
 
 			INFTstaking(_stakingContract).setPoolPayout(payoutProposal[proposalID].poolAddress, payoutProposal[proposalID].payoutAmount, payoutProposal[proposalID].minServe);
 
