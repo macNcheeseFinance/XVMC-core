@@ -93,6 +93,7 @@ contract XVMCgovernor {
     address public immutable fibonacceningContract = ; //reward boost contract
     address public immutable basicContract = ;
 	
+	address public immutable nftStakingContract = ;
 	address public immutable nftAllocationContract = ;
     
     //Addresses for treasuryWallet and NFT wallet
