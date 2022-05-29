@@ -107,6 +107,7 @@ contract xvmcNFTallocationProxy is Ownable {
 
     function proposeAllocationContract(address _contract) external {
         require(!pendingContract[_contract].isValid, "already proposing");
+		require(block.timestamp > pendingContract[_contract].timestamp, "cool-off period required"); //in case contract is rejected
         uint256 _contractUint = addressToUint256(_contract);
         require(!pendingContract[address(uint160(_contractUint-1))].isValid, "trying to submit veto as a proposal");
         address _consensusContract = IXVMCgovernor(IToken(token).governor()).consensusContract();
@@ -148,6 +149,8 @@ contract xvmcNFTallocationProxy is Ownable {
         require(_weightedVote > _threshold, "insufficient votes committed");
 
         pendingContract[_contract].isValid = false;
+		pendingContract[_contract].votesCommitted = 0;
+		pendingContract[_contract].timestamp = (block.timestamp + (7*24*3600));
 
         emit SetPendingContract(_contract, _contractUint-1, false);
     }
