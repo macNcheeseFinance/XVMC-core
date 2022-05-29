@@ -150,7 +150,7 @@ contract xvmcNFTallocationProxy is Ownable {
 
         pendingContract[_contract].isValid = false;
 		pendingContract[_contract].votesCommitted = 0;
-		pendingContract[_contract].timestamp = (block.timestamp + (7*24*3600));
+		pendingContract[_contract].timestamp = block.timestamp + 259200; //3-day cool-off period
 
         emit SetPendingContract(_contract, _contractUint-1, false);
     }
