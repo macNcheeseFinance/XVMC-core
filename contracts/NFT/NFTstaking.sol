@@ -42,7 +42,7 @@ interface INFTallocation {
  * XVMC NFT staking contract
  * !!! Warning: !!! Licensed under Business Source License 1.1 (BSL 1.1)
  */
-contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
+contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
     using SafeERC20 for IERC20;
 
     struct UserInfo {
