@@ -24,7 +24,7 @@ interface IGovernance {
     function rebalancePools() external;
     function nftAllocationContract() external view returns (address);
     function treasuryWallet() external view returns (address);
-	function nftStakingPoolID() external view returns (address);
+	function nftStakingPoolID() external view returns (uint256);
 }
 
 interface IVoting {
