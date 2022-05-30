@@ -52,7 +52,7 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
         uint256 debt; //the allocation for the NFT at the time of deposit(why named debt? idk)
         //basically debt because it counts as "artificial tokens"(we deposit a singular NFT worth an artificial amount)
         //simple substitute for using NFTs instead of regular tokens
-		address allocationContract; //contract that contains allocation details
+		address allocContract; //contract that contains allocation details
     }
     struct UserSettings {
         address pool; //which pool to payout in
@@ -82,7 +82,7 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
     uint256 public totalShares;
     address public admin; //admin = governing contract!
     address public treasury; //penalties
-    address public allocContract; // PROXY CONTRACT for looking up allocations
+    address public allocationContract; // PROXY CONTRACT for looking up allocations
 
     address public votingCreditAddress;
 
