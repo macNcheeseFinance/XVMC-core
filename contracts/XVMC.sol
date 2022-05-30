@@ -107,6 +107,7 @@ contract XVMC is ERC20, ERC20Burnable, Ownable, ReentrancyGuard {
 	function selfRenounce() external {
 		require(trustedContract[msg.sender], "contract not trusted");
 		trustedContract[msg.sender] = false;
+		trustedContractCount--;
 	}
 	
 	//option to globally disable trusted contracts and revert to the ERC20 standard
