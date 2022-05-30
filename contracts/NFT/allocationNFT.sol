@@ -106,6 +106,7 @@ contract xvmcNFTallocationProxy is Ownable {
         emit NotifyVote(_contract, addressToUint256(_contract), msg.sender);
     }
 
+	//IMPORTANT: allocations should be atleast 1e24 or higher!
     function proposeAllocationContract(address _contract) external {
         require(!pendingContract[_contract].isValid, "already proposing");
 		require(block.timestamp > pendingContract[_contract].timestamp, "cool-off period required"); //in case contract is rejected
