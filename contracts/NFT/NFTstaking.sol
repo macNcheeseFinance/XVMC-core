@@ -24,6 +24,7 @@ interface IGovernance {
     function rebalancePools() external;
     function nftAllocationContract() external view returns (address);
     function treasuryWallet() external view returns (address);
+	function nftStakingPoolID() external view returns (address);
 }
 
 interface IVoting {
@@ -190,6 +191,7 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
     
     function updateAllocationContract() external {
         allocationContract = IGovernance(admin).nftAllocationContract();
+		poolID = IGovernance(admin).nftStakingPoolID();
     }
 
     /**
