@@ -138,6 +138,8 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
 	
     /**
      * Creates a NEW stake
+     * allocationContract is the proxy
+     * _allocationContract input is the actual contract containing the allocation data
      */
     function deposit(address _tokenAddress, uint256 _tokenID, address _allocationContract) external nonReentrant {
     	uint256 _allocationAmount = INFTallocation(allocationContract).getAllocation(_tokenAddress, _tokenID, _allocationContract);
