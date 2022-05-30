@@ -406,6 +406,8 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
         totalShares = totalShares - _totalWithdraw;
         uint256 _penalty = _toWithdraw - _payout;
         token.safeTransfer(treasury, _penalty); //penalty to treasury
+        
+        emit Harvest(msg.sender, _beneficiary, _harvestInto, _payout, _penalty, _callFee);
     }
 
     //NOT COUNTING IN min withdraw, just based on shares
