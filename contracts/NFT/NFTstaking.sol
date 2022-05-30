@@ -52,6 +52,7 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
         uint256 debt; //the allocation for the NFT at the time of deposit(why named debt? idk)
         //basically debt because it counts as "artificial tokens"(we deposit a singular NFT worth an artificial amount)
         //simple substitute for using NFTs instead of regular tokens
+		address allocationContract; //contract that contains allocation details
     }
     struct UserSettings {
         address pool; //which pool to payout in
@@ -81,7 +82,7 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
     uint256 public totalShares;
     address public admin; //admin = governing contract!
     address public treasury; //penalties
-    address public allocationContract; // PROXY CONTRACT for looking up allocations
+    address public allocContract; // PROXY CONTRACT for looking up allocations
 
     address public votingCreditAddress;
 
@@ -94,7 +95,7 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
 
     uint256 defaultDirectPayout = 500; //5% if withdrawn into wallet
 
-    event Deposit(address indexed tokenAddress, uint256 indexed tokenID, address indexed depositor, uint256 shares, uint256 nftAllocation);
+    event Deposit(address indexed tokenAddress, uint256 indexed tokenID, address indexed depositor, uint256 shares, uint256 nftAllocation, address allocContract);
     event Withdraw(address indexed sender, uint256 stakeID, address indexed token, uint256 indexed tokenID, uint256 shares, uint256 harvestAmount);
     event UserSettingUpdate(address indexed user, address poolAddress, uint256 threshold, uint256 feeToPay);
 
@@ -153,20 +154,20 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
             currentShares = currentShares - MINIMUM_ALLOCATION;
             totalShares = MINIMUM_ALLOCATION;
             userInfo[address(0)].push(
-                UserInfo(address(0), 0, MINIMUM_ALLOCATION, 0)
+                UserInfo(address(0), 0, MINIMUM_ALLOCATION, 0, address(0))
             );
 
-            emit Deposit(address(0), 0, address(0), MINIMUM_ALLOCATION, 0);
+            emit Deposit(address(0), 0, address(0), MINIMUM_ALLOCATION, 0, address(0));
         }
         
         totalShares = totalShares + currentShares;
         tokenDebt = tokenDebt + _allocationAmount;
         
         userInfo[msg.sender].push(
-                UserInfo(_tokenAddress, _tokenID, currentShares, _allocationAmount)
+                UserInfo(_tokenAddress, _tokenID, currentShares, _allocationAmount, _allocationContract)
             );
 
-        emit Deposit(_tokenAddress, _tokenID, msg.sender, currentShares, _allocationAmount);
+        emit Deposit(_tokenAddress, _tokenID, msg.sender, currentShares, _allocationAmount, _allocationContract);
     }
 
 	
@@ -454,12 +455,21 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
         emit AddVotingCredit(msg.sender, currentAmount);
     } 
 
-    //if allocation for the NFT changes, anyone can rebalance
-    function rebalanceNFT(address _staker, uint256 _stakeID, address _allocationContract) external {
+    // if allocation for the NFT changes, anyone can rebalance
+	// if allocation contract is replaced(rare event), an "evil" third party can push the NFT out of the staking
+	// responsibility of the owner to re-deposit (or rebalance first)
+    function rebalanceNFT(address _staker, uint256 _stakeID, bool isAllocationContractReplaced, address _allocationContract) external {
 		require(_stakeID < userInfo[_staker].length, "invalid stake ID");
 		harvest();
         UserInfo storage user = userInfo[_staker][_stakeID];
-        uint256 _alloc = INFTallocation(allocationContract).getAllocation(user.tokenAddress, user.tokenID, _allocationContract);
+		uint256 _alloc;
+		if(isAllocationContractReplaced) {
+			require(user.allocContract != _allocationContract, "must set allocation replaced setting as FALSE");
+			_alloc = INFTallocation(allocationContract).getAllocation(user.tokenAddress, user.tokenID, _allocationContract);
+			require(_alloc != 0, "incorrect _allocationContract");
+		} else {
+			_alloc = INFTallocation(allocationContract).getAllocation(user.tokenAddress, user.tokenID, user.allocContract);
+		}
         if(_alloc == 0) { //no longer valid, anyone can push out and withdraw NFT to the owner (copy+paste withdraw option)
             uint256 currentAmount = (balanceOf() * (maxHarvest(user))) / (totalShares);
             totalShares = totalShares - user.shares;
@@ -500,6 +510,7 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
             totalShares = totalShares + user.shares;
         }
     }
+	
 
     //need to set pools before launch or perhaps during contract launch
     //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
