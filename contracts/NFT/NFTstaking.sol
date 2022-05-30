@@ -521,6 +521,28 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
         }
     }
 	
+	// emergency withdraw, without caring about rewards
+	function emergencyWithdraw(uint256 _stakeID) public {
+		require(_stakeID < userInfo[msg.sender].length, "invalid stake ID");
+		UserInfo storage user = userInfo[msg.sender][_stakeID];
+		totalShares-= user.shares;
+		tokenDebt-= user.debt; 
+		address _token = user.tokenAddress;
+		uint256 _tokenID = user.tokenID;
+		
+		_removeStake(msg.sender, _stakeID); //delete the stake
+		IERC721(_token).safeTransferFrom(address(this), msg.sender, _tokenID); //withdraw NFT
+	}
+	// withdraw all without caring about rewards
+	// self-harvest to harvest rewards, then emergency withdraw all(easiest to withdraw all+earnings)
+	// (non-rentrant in regular withdraw)
+	function emergencyWithdrawAll() external {
+		uint256 _stakeID = userInfo[msg.sender].length;
+		while(_stakeID > 0) {
+			_stakeID--;
+			emergencyWithdraw(_stakeID);
+		}
+	}
 
     //need to set pools before launch or perhaps during contract launch
     //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
