@@ -35,7 +35,7 @@ interface IacPool {
 }
 
 interface INFTallocation {
-    function nftAllocation(address _tokenAddress, uint256 _tokenID, address _allocationContract) external view returns (uint256);
+    function getAllocation(address _tokenAddress, uint256 _tokenID, address _allocationContract) external view returns (uint256);
 }
 
 /**
@@ -139,7 +139,7 @@ contract XVMCtimeDeposit is ReentrancyGuard, ERC721Holder {
      * Creates a NEW stake
      */
     function deposit(address _tokenAddress, uint256 _tokenID, address _allocationContract) external nonReentrant {
-    	uint256 _allocationAmount = INFTallocation(allocationContract).nftAllocation(_tokenAddress, _tokenID, _allocationContract);
+    	uint256 _allocationAmount = INFTallocation(allocationContract).getAllocation(_tokenAddress, _tokenID, _allocationContract);
         require(_allocationAmount > 0, "Invalid NFT, no allocation");
         harvest();
         uint256 pool = balanceOf();
