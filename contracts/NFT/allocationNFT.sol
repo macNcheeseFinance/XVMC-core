@@ -94,8 +94,9 @@ contract xvmcNFTallocationProxy is Ownable {
 	event EnforceProposal(uint256 proposalID, address enforcer, bool _isSuccess);
 
     function getAllocation(address _tokenAddress, uint256 _tokenID, address _allocationContract) external view returns (uint256) {
-        if(allocationContract[_allocationContract]) {
-            return IAllocation(_allocationContract).nftAllocation(_tokenAddress, _tokenID);
+        uint256 _alloc = IAllocation(_allocationContract).nftAllocation(_tokenAddress, _tokenID);
+	if(allocationContract[_allocationContract] && _alloc >= 1e18) { //allocation must be equal or greater than 1e18
+            return _alloc;
         } else {
             return 0;
         }
@@ -106,7 +107,7 @@ contract xvmcNFTallocationProxy is Ownable {
         emit NotifyVote(_contract, addressToUint256(_contract), msg.sender);
     }
 
-	//IMPORTANT: allocations should be atleast 1e24 or higher!
+	//IMPORTANT: allocations have to be atleast 1e18, ideally greater!
     function proposeAllocationContract(address _contract) external {
         require(!pendingContract[_contract].isValid, "already proposing");
 		require(block.timestamp > pendingContract[_contract].timestamp, "cool-off period required"); //in case contract is rejected
