@@ -101,6 +101,10 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
     event UserSettingUpdate(address indexed user, address poolAddress, uint256 threshold, uint256 feeToPay);
 
     event AddVotingCredit(address indexed user, uint256 amount);
+    event EmergencyWithdraw(address indexed user, uint256 _stakeID, address indexed token, uint256 tokenID);
+    event Harvest(address indexed harvester, address indexed benficiary, address harvestInto, uint256 harvestAmount, uint256 penalty, uint256 callFee); //harvestAmount contains the callFee
+    event SelfHarvest(address indexed user, address harvestInto, uint256 harvestAmount, uint256 penalty);
+
     /**
      * @notice Constructor
      * @param _token: XVMC token contract
@@ -267,7 +271,10 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
             IacPool(_harvestInto).giftDeposit(_payout, msg.sender, poolPayout[_harvestInto].minServe);
         }
         totalShares = totalShares - _totalWithdraw;
-        token.safeTransfer(treasury, (_toWithdraw - _payout)); //penalty to treasury
+        uint256 _penalty = _toWithdraw - _payout;
+        token.safeTransfer(treasury, _penalty); //penalty to treasury
+
+        emit SelfHarvest(msg.sender, _harvestInto, _payout, _penalty);
     }
 	//copy+paste of the previous function, can harvest custom stake ID
 	//In case user has too many stakes, or if some are not worth harvesting
@@ -296,7 +303,10 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
             IacPool(_harvestInto).giftDeposit(_payout, msg.sender, poolPayout[_harvestInto].minServe);
         }
         totalShares = totalShares - _totalWithdraw;
-        token.safeTransfer(treasury, (_toWithdraw - _payout)); //penalty to treasury
+        uint256 _penalty = _toWithdraw - _payout;
+        token.safeTransfer(treasury, _penalty); //penalty to treasury
+
+        emit SelfHarvest(msg.sender, _harvestInto, _payout, _penalty);
     }
 
     //harvest earnings of another user(receive fees)
@@ -343,8 +353,12 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
             IacPool(_harvestInto).giftDeposit((_payout - _callFee), _beneficiary, poolPayout[_harvestInto].minServe);
         }
         totalShares = totalShares - _totalWithdraw;
-        token.safeTransfer(treasury, (_toWithdraw - _payout)); //penalty to treasury
+        uint256 _penalty = _toWithdraw - _payout;
+        token.safeTransfer(treasury, _penalty); //penalty to treasury
+
+        emit Harvest(msg.sender, _beneficiary, _harvestInto, _payout, _penalty, _callFee);
     }
+
 	//copy+paste of the previous function, can harvest custom stake ID
 	//In case user has too many stakes, or if some are not worth harvesting
 	function proxyHarvestCustom(address _beneficiary, uint256[] calldata _stakeID) external {
@@ -390,7 +404,8 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
             IacPool(_harvestInto).giftDeposit((_payout - _callFee), _beneficiary, poolPayout[_harvestInto].minServe);
         }
         totalShares = totalShares - _totalWithdraw;
-        token.safeTransfer(treasury, (_toWithdraw - _payout)); //penalty to treasury
+        uint256 _penalty = _toWithdraw - _payout;
+        token.safeTransfer(treasury, _penalty); //penalty to treasury
     }
 
     //NOT COUNTING IN min withdraw, just based on shares
@@ -531,6 +546,7 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
 		uint256 _tokenID = user.tokenID;
 		
 		_removeStake(msg.sender, _stakeID); //delete the stake
+        emit EmergencyWithdraw(msg.sender, _stakeID, _token, _tokenID);
 		IERC721(_token).safeTransferFrom(address(this), msg.sender, _tokenID); //withdraw NFT
 	}
 	// withdraw all without caring about rewards
