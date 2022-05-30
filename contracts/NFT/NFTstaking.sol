@@ -459,7 +459,7 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
 		require(_stakeID < userInfo[_staker].length, "invalid stake ID");
 		harvest();
         UserInfo storage user = userInfo[_staker][_stakeID];
-        uint256 _alloc = INFTallocation(allocationContract).nftAllocation(user.tokenAddress, user.tokenID, _allocationContract);
+        uint256 _alloc = INFTallocation(allocationContract).getAllocation(user.tokenAddress, user.tokenID, _allocationContract);
         if(_alloc == 0) { //no longer valid, anyone can push out and withdraw NFT to the owner (copy+paste withdraw option)
             uint256 currentAmount = (balanceOf() * (maxHarvest(user))) / (totalShares);
             totalShares = totalShares - user.shares;
