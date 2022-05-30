@@ -395,10 +395,16 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
 
     //NOT COUNTING IN min withdraw, just based on shares
     //calculates amount of shares that cover the debt. Subtract from total to get maximum harvest amount
-    function maxHarvest(UserInfo memory _user) public view returns (uint256) {
+    function maxHarvest(UserInfo memory _user) internal view returns (uint256) {
         uint256 _maximum = (_user.debt * totalShares) / balanceOf();
         return (_user.shares - _maximum - 1);
     }
+	
+	function maxHarvestPublic(address _staker, uint256 _stakeID) external view returns (uint256) {
+		UserInfo storage _user = userInfo[_staker][_stakeID];
+		uint256 _maximum = (_user.debt * totalShares) / publicBalanceOf();
+        return (_user.shares - _maximum - 1);
+	}
     
     function viewStakeEarnings(address _user, uint256 _stakeID) external view returns (uint256) {
         uint256 _tokens = (balanceOf() * userInfo[_user][_stakeID].shares) / totalShares;
