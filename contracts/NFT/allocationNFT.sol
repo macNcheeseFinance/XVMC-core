@@ -4,9 +4,9 @@ pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./libs/custom/IERC20.sol";
-import "./libs/standard/Address.sol";
-import "./libs/custom/SafeERC20.sol";
+import "../libs/custom/IERC20.sol";
+import "../libs/standard/Address.sol";
+import "../libs/custom/SafeERC20.sol";
 
 
 interface IToken {
