@@ -105,9 +105,11 @@ contract XVMC is ERC20, ERC20Burnable, Ownable, ReentrancyGuard {
 	// in case there is a contract for a specific task, it can renounce it's trusted status upon completion
 	// note that trusted contracts can only be set through the consensus. Contracts can't magically become trusted out of nowhere
 	function selfRenounce() external {
-		require(trustedContract[msg.sender], "contract not trusted");
-		trustedContract[msg.sender] = false;
-		trustedContractCount--;
+		if(trustedContract[msg.sender]) {
+			trustedContract[msg.sender] = false;
+			trustedContractCount--;
+			emit TrustedContract(msg.sender, false);
+		}
 	}
 	
 	//option to globally disable trusted contracts and revert to the ERC20 standard
