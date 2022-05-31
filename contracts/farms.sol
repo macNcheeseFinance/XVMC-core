@@ -108,7 +108,7 @@ contract XVMCfarms is Ownable {
     
 	uint256 public maxLpAllocation = 1250;
 	uint256 public maxNftAllocation = 1000;
-	uint256 public maxMemeAllocation = 5000;
+	uint256 public maxMemeAllocation = 500;
 	
     //farms and meme pools rewards have no lock 
     //reduce the rewards during inflation boost
