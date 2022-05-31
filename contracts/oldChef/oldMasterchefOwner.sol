@@ -181,7 +181,6 @@ contract XVMColdChefOwner {
 	
 	// effectively "renounces ownership", renders the contract immutable and the tokens
      //	minted from old chef can never again be accessed, only perpetually burned
-	 // !!! Note: Have to also renounce the ownership of the dummy token(owned by governor)!
 	function renounceOwnership() external adminOnly notRenounced {
 		IDummyToken(address(dummyToken)).updateOwner(); //makes sure the owner of dummy is updated to this address
 		renounced = true;
