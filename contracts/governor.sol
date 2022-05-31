@@ -227,8 +227,9 @@ contract XVMCgovernor {
     function updateAllPools() external {
         IMasterChef(masterchef).updatePool(0); // XVMC-USDC and XVMC-wmatic
     	IMasterChef(masterchef).updatePool(1); 
-    	IMasterChef(masterchef).updatePool(7); //meme pool 7,8
-    	IMasterChef(masterchef).updatePool(8);
+    	IMasterChef(masterchef).updatePool(8); //meme pool 8,9
+    	IMasterChef(masterchef).updatePool(9);
+		IMasterChef(masterchef).updatePool(10); // NFT staking
         IMasterChef(masterchef).updatePool(acPool1ID);
     	IMasterChef(masterchef).updatePool(acPool2ID); 
     	IMasterChef(masterchef).updatePool(acPool3ID); 
