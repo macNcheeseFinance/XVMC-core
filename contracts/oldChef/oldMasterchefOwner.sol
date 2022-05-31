@@ -44,7 +44,7 @@ contract XVMColdChefOwner {
     using SafeERC20 for IERC20;
 
 	
-    IERC20 public token; // XVMC token
+    IERC20 public token = IERC20(0x6d0c966c8A09e354Df9C48b446A474CE3343D912); // XVMC token
 	
 	IERC20 public newToken; // updated XVMC
 	
@@ -68,13 +68,11 @@ contract XVMColdChefOwner {
      * @param _admin: address of the admin
      */
     constructor(
-        IERC20 _token,
 		IERC20 _newToken,
 		IERC20 _dummyToken,
         IMasterChef _masterchef,
         address _admin
     ) {
-        token = _token;
 		newToken = _newToken;
 		dummyToken = _dummyToken;
         masterchef = _masterchef;
