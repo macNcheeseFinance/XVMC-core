@@ -137,7 +137,7 @@ contract XVMCgovernor {
     uint256 public immutable minDelay = 1 days; // has to be called minimum 1 day in advance
     uint256 public immutable maxDelay = 31 days; //1month.. is that good? i think yes
     
-    uint256 public rewardPerBlockPriorFibonaccening; //remembers the last reward used
+    uint256 public lastRegularReward = 33333000000000000000000; //remembers the last reward used(outside of boost)
     bool public eventFibonacceningActive; // prevent some functions if event is active ..threshold and durations for fibonaccening
     
     uint256 public blocksPerSecond = 434783; // divide by a million
@@ -338,10 +338,14 @@ contract XVMCgovernor {
     function setInflation(uint256 rewardPerBlock) external {
         require(msg.sender == fibonacceningContract);
     	IMasterChef(masterchef).updateEmissionRate(rewardPerBlock);
-        rewardPerBlockPriorFibonaccening = rewardPerBlock; //remember last inflation
-        
+
         emit SetInflation(rewardPerBlock);
     }
+	
+	function rememberReward() external {
+		require(msg.sender == fibonacceningContract);
+		lastRegularReward = IMasterChef(masterchef).XVMCPerBlock();
+	}
     
     
     function enforceGovernor() external {
