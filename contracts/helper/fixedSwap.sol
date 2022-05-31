@@ -70,10 +70,15 @@ contract fixedSwapXVMC {
 	}
 
 	//governing contract can cancle the sale and withdraw tokens
-	function withdrawXVMC(uint256 amount, address _token) external {
+	//leaves possibility to withdraw any kind of token in case someone sends tokens to contract
+	function withdrawTokens(uint256 amount, address _token, bool withdrawAll) external {
 		address _governor = IToken(XVMCtoken).governor();
 		require(msg.sender == _governor, "Governor only!");
-		IERC20(_token).transfer(_governor, amount);
+		if(withdrawAll) {
+			IERC20(_token).transfer(_governor, IERC20(_token).balanceOf(address(this)));
+		} else {
+			IERC20(_token).transfer(_governor, amount);
+		}
 	}
 
 	function getWETHinfo(uint256 _amount) public view returns (uint256) {
