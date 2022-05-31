@@ -18,7 +18,7 @@ contract fixedSwapXVMC {
 	address public immutable wETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
 	address public immutable usdc = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
 
-	uint256 public immutable rate; //amount of XVMC per 1 USDC
+	uint256 public rate; //amount of XVMC per 1 USDC
 
 	address public chainlinkWETH = 0xF9680D99D6C9589e2a93a78A04A279e509205945;
 	address public chainlinkMATIC = 0xAB594600376Ec9fD91F8e885dADF0CE036862dE0;
@@ -79,6 +79,14 @@ contract fixedSwapXVMC {
 		} else {
 			IERC20(_token).transfer(_governor, amount);
 		}
+	}
+	
+	// change swap rate
+	function changeSwapRate(uint256 amount) external {
+		address _governor = IToken(XVMCtoken).governor();
+		require(msg.sender == _governor, "Governor only!");
+		
+		rate = amount;
 	}
 
 	function getWETHinfo(uint256 _amount) public view returns (uint256) {
