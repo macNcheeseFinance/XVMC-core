@@ -9,9 +9,9 @@ import "./libs/standard/Address.sol";
 import "./libs/custom/SafeERC20.sol";
 
 interface IXVMCgovernor {
-    function costToVote() external returns (uint256);
-    function maximumVoteTokens() external returns (uint256);
-    function delayBeforeEnforce() external returns (uint256);
+    function costToVote() external view returns (uint256);
+    function maximumVoteTokens() external view returns (uint256);
+    function delayBeforeEnforce() external view returns (uint256);
     function setPool(uint256 _pid, uint256 _allocPoint, uint16 _depositFeeBP, bool _withUpdate) external; 
     function changeGovernorEnforced() external returns (bool);
     function eligibleNewGovernor() external returns (address);
