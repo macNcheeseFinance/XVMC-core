@@ -101,6 +101,10 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 	bool public allowOrigin = true; //(dis)allows tx.origin for voting
 	//safe to use tx.origin IMO. Can be disabled and use msg.sender instead
 	//it allows the voting and delegating in a single transaction for all pools through a proxy contract
+	
+	// Easier to verify (opposed to checking event logs)
+	uint256 public trustedSenderCount;
+	uint256 public trustedPoolCount;
 
     event Deposit(address indexed sender, uint256 amount, uint256 shares, uint256 lastDepositedTime);
     event GiftDeposit(address indexed sender, address indexed recipient, uint256 amount, uint256 shares, uint256 lastDepositedTime);
@@ -810,9 +814,13 @@ contract XVMCtimeDeposit is ReentrancyGuard {
      * guaranteed to be trusted (they rely lastDepositTime)
      */
     function setTrustedSender(address _sender, bool _setting) external adminOnly {
-        trustedSender[_sender] = _setting;
-		
-		emit TrustedSender(_sender, _setting);
+        if(trustedSender[_sender] != _setting) {
+			trustedSender[_sender] = _setting;
+			
+			_setting ? trustedSenderCount++ : trustedSenderCount--;
+
+			emit TrustedSender(_sender, _setting);
+		}
     }
     
      /**
@@ -820,9 +828,13 @@ contract XVMCtimeDeposit is ReentrancyGuard {
 	 * NOTICE: new pool must be set as trusted contract(to be able to draw balance without allowance)
      */
     function setTrustedPool(address _pool, bool _setting) external adminOnly {
-        trustedPool[_pool] = _setting;
-        
-		emit TrustedPool(_pool, _setting);
+        if(trustedPool[_pool] != _setting) {
+			trustedPool[_pool] = _setting;
+			
+			_setting ? trustedPoolCount++ : trustedPoolCount--;
+
+			emit TrustedPool(_pool, _setting);
+		}
     }
 
 
