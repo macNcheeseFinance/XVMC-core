@@ -35,6 +35,10 @@ interface IDummyToken {
  * the massUpdatePools() in masterchef being called
  * Consequentially the emissions can not ever be updated
  * This contract receives all the rewards from old masterchef and burns them
+ * Owner of the masterchef can mint infinite tokens and has enormous control
+ * The "sneaky" dev that launched old masterchef added another function
+ * (approve) which could be used to grant access to withdraw funds from the old masterchef contract
+ * However we took control after launch and made sure it has never been used, feel free to check event logs
  */
 contract XVMColdChefOwner {
     using SafeERC20 for IERC20;
