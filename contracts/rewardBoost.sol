@@ -124,6 +124,10 @@ contract XVMCfibonaccening is Ownable {
 	constructor (IERC20 _XVMC, address _masterchef) {
 		token = _XVMC;
 		masterchef = _masterchef;
+		
+		fibonacceningProposals.push(
+		    FibonacceningProposal(true, 0, 1e40, 0, 0, 169*1e21, 185000, 1654097100)
+		    );
 	}
     
     
