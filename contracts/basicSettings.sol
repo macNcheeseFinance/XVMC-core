@@ -8,10 +8,10 @@ import "./libs/standard/Address.sol";
 import "./libs/custom/SafeERC20.sol";
 
 interface IXVMCgovernor {
-    function costToVote() external returns (uint256);
+    function costToVote() external view returns (uint256);
     function updateCostToVote(uint256 newCostToVote) external;
     function updateDelayBeforeEnforce(uint256 newDelay) external; 
-    function delayBeforeEnforce() external returns (uint256);
+    function delayBeforeEnforce() external view returns (uint256);
     function updateDurationForCalculation(uint256 newDuration) external;
     function setCallFee(address acPool, uint256 newCallFee) external;
     function changeGovernorEnforced() external returns (bool);
