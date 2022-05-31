@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0/contracts/security/ReentrancyGuard.sol";
 
 interface IToken {
 	function governor() external view returns (address);
@@ -13,7 +14,7 @@ interface IChainlink {
 	function latestAnswer() external view returns (int256);
 }
 
-contract fixedSwapXVMC {
+contract fixedSwapXVMC is ReentrancyGuard {
 	address public immutable XVMCtoken;
 	address public immutable wETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
 	address public immutable usdc = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
@@ -31,7 +32,7 @@ contract fixedSwapXVMC {
 	}
 
 	
-	function swapWETHforXVMC(uint256 amount) external {
+	function swapWETHforXVMC(uint256 amount) external nonReentrant {
 		address _governor = IToken(XVMCtoken).governor();
 		address _treasuryWallet = IGovernor(_governor).treasuryWallet();
 
@@ -42,7 +43,7 @@ contract fixedSwapXVMC {
 		emit Swap(msg.sender, wETH, amount, _toSend);
 	}
 
-	function swapMATICforXVMC(uint256 amount) payable public {
+	function swapMATICforXVMC(uint256 amount) payable public nonReentrant {
 		require(msg.value == amount);
 
 		address _governor = IToken(XVMCtoken).governor();
@@ -57,7 +58,7 @@ contract fixedSwapXVMC {
 		emit Swap(msg.sender, 0x0000000000000000000000000000000000001010, amount, _toSend);
 	}
 
-	function swapUSDCforXVMC(uint256 amount) external {
+	function swapUSDCforXVMC(uint256 amount) external nonReentrant {
 		address _governor = IToken(XVMCtoken).governor();
 		address _treasuryWallet = IGovernor(_governor).treasuryWallet();
 
