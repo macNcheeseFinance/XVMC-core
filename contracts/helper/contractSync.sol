@@ -15,6 +15,7 @@ interface IXVMCgovernor {
     function nftAllocationContract () external view returns (address);
 	function nftStakingPoolID() external view returns (uint256);
 	function masterchef() external view returns (address);
+	function nftStakingContract() external view returns (address);
 }
 
 interface IToken {
@@ -146,7 +147,7 @@ contract XVMCsyncContracts {
         uint256 _poolID = IXVMCgovernor(governor).nftStakingPoolID(); //get NFT staking pool ID from governor
 		address _chef = IXVMCgovernor(governor).masterchef(); //masterchef staking contract address
 		(address dummyToken, , , ,) = IMasterChef(_chef).poolInfo(_poolID); //get dummy token address
-		address _stakingContract = IDummy(dummyToken).owner(); //NFT staking contract is the owner of the dummy token
+		address _stakingContract = IXVMCgovernor(governor).nftStakingContract();
 
         IChange(IGovernor(governor).nftAllocationContract()).changeGovernor();
         INFTstaking(_stakingContract).setAdmin();
