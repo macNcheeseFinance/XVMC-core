@@ -19,7 +19,7 @@ interface IXVMCgovernor {
     function setInflation(uint256 newInflation) external;
     function delayFibonacci(bool _arg) external;
     function totalFibonacciEventsAfterGrand() external returns (uint256);
-    function rewardPerBlockPriorFibonaccening() external returns (uint256);
+    function lastRegularReward() external returns (uint256);
     function blocksPerSecond() external returns (uint256);
     function changeGovernorEnforced() external returns (bool);
     function eligibleNewGovernor() external returns (address);
@@ -28,6 +28,7 @@ interface IXVMCgovernor {
 	function isInflationStatic() external returns (bool);
 	function consensusContract() external view returns (address);
 	function postGrandFibIncreaseCount() external;
+	function rememberReward() external;
 }
 
 interface IMasterChef {
@@ -205,6 +206,7 @@ contract XVMCfibonaccening is Ownable {
 			tokensForBurn = IXVMCgovernor(owner()).thresholdFibonaccening();
 			IERC20(token).safeTransferFrom(owner(), address(this), tokensForBurn); 
 			
+			IXVMCgovernor(owner()).rememberReward(); // remembers last regular rewar(before boost)
 			IXVMCgovernor(owner()).setInflation(fibonacceningProposals[proposalID].rewardPerBlock);
 			
 			fibonacceningProposals[proposalID].valid = false;
@@ -516,9 +518,9 @@ contract XVMCfibonaccening is Ownable {
     */
     function calculateUpcomingRewardPerBlock() public returns(uint256) {
         if(!expiredGrandFibonaccening) {
-            return IXVMCgovernor(owner()).rewardPerBlockPriorFibonaccening() - goldenRatio * 1e18;
+            return IXVMCgovernor(owner()).lastRegularReward() - goldenRatio * 1e18;
         } else {
-            return IXVMCgovernor(owner()).rewardPerBlockPriorFibonaccening() * 98382 / 100000; 
+            return IXVMCgovernor(owner()).lastRegularReward() * 98382 / 100000; 
         }
     }
 }
