@@ -140,6 +140,9 @@ contract XVMColdChefOwner {
 		}
     }
 	
+	// IMPORTANT NOTE: in the old chef, ONLY the respective owner can change the address
+	// eg. fee address can change fee address, dev address can change dev address
+	// in new masterchef onlyOwner can change the addresses
 	//functions to transfer Masterchef owner, fee and dev address to new contract(if need be)
 	function setChefFeeAddress(address _newAddress) external adminOnly notRenounced {
 		IMasterChef(masterchef).setFeeAddress(_newAddress);
