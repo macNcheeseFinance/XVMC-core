@@ -294,8 +294,11 @@ contract XVMCfibonaccening is Ownable {
         emit RebalanceInflation(rewardPerBlock);
     }
     
-       /**
+     /**
      * If inflation is to drop below golden ratio, the grand fibonaccening event is ready
+	 * IMPORTANT NOTE: the math for the grand fibonaccening needs a lot of additional checks
+	 * It is almost certain that fixes will be required. The event won't happen for quite some time.
+	 * Giving enough time for additional fixes and changes to be adapted
      */
     function isGrandFibonacceningReady() external {
 		require(!eligibleGrandFibonaccening);
@@ -473,7 +476,7 @@ contract XVMCfibonaccening is Ownable {
         require(block.number >= (targetBlock-7));
         
 		uint256 _totalSupply = getTotalSupply();
-		uint256 tokensToPrint = ( _totalSupply * goldenRatio / 1000) -  _totalSupply;
+		uint256 tokensToPrint = (_totalSupply * goldenRatio) / 100000; // 1618 => 1.618 (/1000), 1.618 => 1.618% (/100)
 		
         uint256 newEmissions =  tokensToPrint / (365 * 24 * 36 * IXVMCgovernor(owner()).blocksPerSecond() / 10000); 
 		
