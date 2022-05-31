@@ -122,6 +122,8 @@ contract XVMCgovernor {
 	
 	mapping(address => address[]) public signaturesConfirmed; //for multi-sig
 	mapping(address => mapping(address => bool)) public alreadySigned; //alreadySigned[owner][newGovernor]
+	
+	uint256 public newGovernorBlockDelay = 189000; //in blocks (roughly 5 days at beginning)
     
     uint256 public costToVote = 500000 * 1e18;  // 500K coins. All proposals are valid unless rejected. This is a minimum to prevent spam
     uint256 public delayBeforeEnforce = 3 days; //minimum number of TIME between when proposal is initiated and executed
@@ -138,7 +140,7 @@ contract XVMCgovernor {
     uint256 public rewardPerBlockPriorFibonaccening; //remembers the last reward used
     bool public eventFibonacceningActive; // prevent some functions if event is active ..threshold and durations for fibonaccening
     
-    uint256 public blocksPerSecond = 434783; // divids with a million
+    uint256 public blocksPerSecond = 434783; // divide by a million
     uint256 public durationForCalculation= 12 hours; //period used to calculate block time
     uint256  public lastBlockHeight; //block number when counting is activated
     uint256 public recordTimeStart; //timestamp when counting is activated
@@ -343,7 +345,7 @@ contract XVMCgovernor {
     
     function enforceGovernor() external {
         require(msg.sender == consensusContract);
-		require(newGovernorRequestBlock + 269420 < block.number, "time delay not yet passed");
+		require(newGovernorRequestBlock + newGovernorBlockDelay < block.number, "time delay not yet passed");
 
 		IMasterChef(masterchef).setFeeAddress(eligibleNewGovernor);
         IMasterChef(masterchef).dev(eligibleNewGovernor);
@@ -459,6 +461,21 @@ contract XVMCgovernor {
         
         IERC20(_tokenContract).safeTransfer(treasuryWallet, amount);
     }
+	
+	
+	/*
+	 * newGovernorBlockDelay is the delay during which the governor proposal can be voted against
+	 * As the time passes, changes should take longer to enforce(greater security)
+	 * Prioritize speed and efficiency at launch. Prioritize security once established
+	 * Delay increases by 2500 blocks(roughly 1.6hours) per each day after launch
+	 * Delay starts at 189000 blocks(roughly 5 days)
+	 * After a month, delay will be roughly 7 days (increases 2days/month)
+	 * After a year, 29 days. After 2 years, 53 days,...
+	 * Can be ofcourse changed by replacing governor contract
+	 */
+	function updateGovernorChangeDelay() external {
+		newGovernorBlockDelay = 189000 + (((block.timestamp - 1654041600) / 86400) * 2500);
+	}
 
     
     /**
