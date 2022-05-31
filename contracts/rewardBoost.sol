@@ -9,11 +9,11 @@ import "./libs/standard/Address.sol";
 import "./libs/custom/SafeERC20.sol";
 
 interface IXVMCgovernor {
-    function costToVote() external returns (uint256);
-    function maximumVoteTokens() external returns (uint256);
-    function delayBeforeEnforce() external returns (uint256);
-    function thresholdFibonaccening() external returns (uint256);
-    function eventFibonacceningActive() external returns (bool);
+    function costToVote() external view returns (uint256);
+    function maximumVoteTokens() external view returns (uint256);
+    function delayBeforeEnforce() external view returns (uint256);
+    function thresholdFibonaccening() external view returns (uint256);
+    function eventFibonacceningActive() external view returns (bool);
     function setThresholdFibonaccening(uint256 newThreshold) external;
     function fibonacciDelayed() external returns (bool);
     function setInflation(uint256 newInflation) external;
