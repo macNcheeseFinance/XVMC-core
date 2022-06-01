@@ -6,13 +6,12 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 interface IToken {
     function governor() external view returns (address);
 }
 
-contract NFTtreasuryXVMC is Ownable, IERC721Receiver, ERC721Holder {
+contract NFTtreasuryXVMC is Ownable, IERC721Receiver {
     address public immutable xvmc; //XVMC token address
 	
 	constructor(address _XVMC) {
