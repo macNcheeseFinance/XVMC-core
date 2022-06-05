@@ -53,7 +53,7 @@ contract XVMColdChefOwner {
 	
 	uint256 public burnDelay =  42690; //Delay before burn can be enforcedd
 	
-	uint256 public poolID = 58;
+	uint256 public poolID = 59;
 	
 	bool public renounced; // if renounced, the old masterchef is sealed in and can only be burned forever(else governor of new token has the power to take control)
 
