@@ -150,10 +150,16 @@ contract XVMC is ERC20, ERC20Burnable, Ownable, ReentrancyGuard {
 		return IMasterchef(owner()).owner();
 	}
 	
+	// masterchef is the owner of the token (handles token minting/inflation)
+	function masterchefAddress() external view returns (address) {
+		return owner();
+	}
+	
 	function actualSupply() public view returns (uint256) {
 		uint256 _actualSupply = totalSupply() + 1000 * (oldToken.totalSupply() - oldToken.balanceOf(address(this)));
 		return _actualSupply;
 	}
+	
 	
     /**
      * @dev Returns the name of the token.
