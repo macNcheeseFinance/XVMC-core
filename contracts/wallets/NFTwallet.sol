@@ -5,19 +5,23 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IToken {
     function governor() external view returns (address);
 }
 
-contract NFTtreasuryXVMC is Ownable, IERC721Receiver {
+contract NFTtreasuryXVMC is IERC721Receiver {
     address public immutable xvmc; //XVMC token address
 	
 	constructor(address _XVMC) {
 		xvmc = _XVMC;
     }
     
+    modifier onlyOwner() {
+        require(msg.sender == IToken(xvmc).governor(), "admin: wut?");
+        _;
+    }
+	
     function onERC721Received(address, address, uint256, bytes memory) public virtual override returns (bytes4) {
         return this.onERC721Received.selector;
     }
@@ -38,10 +42,5 @@ contract NFTtreasuryXVMC is Ownable, IERC721Receiver {
 
     function approveNFTall(address claimer, address token, bool approval) external onlyOwner {
         IERC721(token).setApprovalForAll(claimer, approval);
-    }
-
-	//Governor is the owner of masterchef(and masterchef owns the token)
-	function changeGovernor() external {
-		_transferOwnership(IToken(xvmc).governor());
     }
 }
