@@ -9,12 +9,14 @@ interface IToken {
 }
 
 contract XVMCtrackerCDP is ERC20, ERC20Burnable {
-	address public immutable XVMCtoken = ;
+	address public immutable xvmc;
 
-    constructor(string memory _forDuration) ERC20("Dummy Token", _forDuration) {}
+    constructor(string memory _forDuration, address _xvmc) ERC20("Dummy Token", _forDuration) {
+		xvmc = _xvmc;
+	}
     
     modifier onlyOwner() {
-        require(msg.sender == IToken(XVMCtoken).governor(), "only governor allowed");
+        require(msg.sender == IToken(xvmc).governor(), "only governor allowed");
         _;
     }
 
