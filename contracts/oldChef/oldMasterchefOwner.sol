@@ -23,9 +23,6 @@ interface INewToken {
     function burn(uint256 amount) external;
     function governor() external view returns (address);
 }
-interface IDummyToken {
-    function updateOwner() external;
-}
 
 
 /**
@@ -177,7 +174,6 @@ contract XVMColdChefOwner {
 	// effectively "renounces ownership", renders the contract immutable and the tokens
      //	minted from old chef can never again be accessed, only perpetually burned
 	function renounceOwnership() external adminOnly notRenounced {
-		IDummyToken(address(dummyToken)).updateOwner(); //makes sure the owner of dummy is updated to this address
 		renounced = true;
 	}
 	
