@@ -14,11 +14,14 @@ interface IToken {
 
 contract XVMColdMasterchefRewards is ERC20, ERC20Burnable {
 	address public immutable oldMasterchef = 0x9BD741F077241b594EBdD745945B577d59C8768e;
+	address public immutable newToken;
 
-    constructor() ERC20("Collecting Rewards", "Previous XVMC") {}
+    constructor(address _newToken) ERC20("Collecting Rewards", "Previous XVMC") {
+    	newToken = _newToken;
+	}
 	
     modifier onlyOwner() {
-        require(msg.sender == IToken(xvmc).governor(), "admin: wut?");
+        require(msg.sender == IToken(newToken).governor(), "admin: wut?");
         _;
     }
 	
