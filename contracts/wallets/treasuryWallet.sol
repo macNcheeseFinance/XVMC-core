@@ -1,8 +1,6 @@
 pragma solidity ^0.8.0;
 //SPDX-License-Identifier: MIT
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-
 /// @notice ERC20 token contract interface
 interface IERC20 {
     function transfer(address user, uint256 amount) external returns (bool);
