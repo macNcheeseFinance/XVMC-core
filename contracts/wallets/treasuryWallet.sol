@@ -21,7 +21,7 @@ contract XVMCtreasury {
   }
   
    modifier onlyOwner() {
-    require(msg.sender == IToken(xvmc).governor(), "admin: wut?");
+    require(msg.sender == IToken(token).governor(), "admin: wut?");
     _;
    }
 
