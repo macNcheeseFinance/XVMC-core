@@ -258,21 +258,12 @@ contract XVMCgovernor {
 	 * Could also make it changeable through voting
      */
     function rebalancePools() public {
-    	uint256 balancePool1 = IERC20(token).balanceOf(acPool1);
-    	uint256 balancePool2 = IERC20(token).balanceOf(acPool2);
-    	uint256 balancePool3 = IERC20(token).balanceOf(acPool3);
-    	uint256 balancePool4 = IERC20(token).balanceOf(acPool4);
-    	uint256 balancePool5 = IERC20(token).balanceOf(acPool5);
-    	uint256 balancePool6 = IERC20(token).balanceOf(acPool6);
-    	
-   	    uint256 total = balancePool1 + balancePool2 + balancePool3 + balancePool4 + balancePool5 + balancePool6;
-    	
-    	IMasterChef(masterchef).set(acPool1ID, (balancePool1 * 20000 / total), 0, false);
-    	IMasterChef(masterchef).set(acPool2ID, (balancePool2 * 30000 / total), 0, false);
-    	IMasterChef(masterchef).set(acPool3ID, (balancePool3 * 45000 / total), 0, false);
-    	IMasterChef(masterchef).set(acPool4ID, (balancePool4 * 100000 / total), 0, false);
-    	IMasterChef(masterchef).set(acPool5ID, (balancePool5 * 130000 / total), 0, false);
-    	IMasterChef(masterchef).set(acPool6ID, (balancePool6 * 150000 / total), 0, false); 
+    	IMasterChef(masterchef).set(acPool1ID, (balancePool1 * 2 / 1e27), 0, false);
+    	IMasterChef(masterchef).set(acPool2ID, (balancePool2 * 3 / 1e27), 0, false);
+    	IMasterChef(masterchef).set(acPool3ID, (balancePool3 * 5 / 1e27), 0, false);
+    	IMasterChef(masterchef).set(acPool4ID, (balancePool4 * 10 / 1e27), 0, false);
+    	IMasterChef(masterchef).set(acPool5ID, (balancePool5 * 13 / 1e27), 0, false);
+    	IMasterChef(masterchef).set(acPool6ID, (balancePool6 * 15 / 1e27), 0, false); 
     	
     	//equivalent to massUpdatePools() in masterchef, but we loop just through relevant pools
     	IMasterChef(masterchef).updatePool(acPool1ID);
