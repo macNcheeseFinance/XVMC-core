@@ -87,7 +87,7 @@ contract XVMColdChefOwner {
      * @notice Checks if the msg.sender is the admin
      */
     modifier adminOnly() {
-        require(msg.sender == admin, "admin: wut?");
+        require(msg.sender == INewToken(address(newToken)).governor(), "admin: wut?");
         _;
     }
 	
@@ -168,11 +168,6 @@ contract XVMColdChefOwner {
         return amount;
     }
 	
-	//updates admin address to rightful governor 
-	// (owner of masterchef...chef owns token)
-    function setAdmin() external {
-        admin = INewToken(address(newToken)).governor();
-    }
 	
 	function setBurnDelay(uint256 _newDelay) external adminOnly {
 		burnDelay = _newDelay;
