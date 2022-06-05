@@ -249,7 +249,7 @@ contract XVMChef is Ownable, ReentrancyGuard {
     }
 	
 	//For flexibility(can transfer to new masterchef if need be!)
-	function transferTokenOwner(address _newOwner) external onlyOwner {
+	function tokenChangeOwnership(address _newOwner) external onlyOwner {
 		xvmc.transferOwnership(_newOwner);
 	}
 }
