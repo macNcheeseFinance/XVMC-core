@@ -564,8 +564,9 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
 
     //need to set pools before launch or perhaps during contract launch
     //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
+	//allocation contract contains the decentralized proccess for updating setting, but so does the admin(governor)
     function setPoolPayout(address _poolAddress, uint256 _amount, uint256 _minServe) external {
-        require(msg.sender == allocationContract, "must be set by allocation contract");
+        require(msg.sender == allocationContract || msg.sender == admin, "must be set by allocation contract or admin");
 		if(_poolAddress == address(0)) {
 			require(_amount <= 10000, "out of range");
 			defaultDirectPayout = _amount;
