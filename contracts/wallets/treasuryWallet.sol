@@ -12,7 +12,7 @@ interface IToken {
     function governor() external view returns (address);
 }
 
-contract XVMCtreasury is Ownable {
+contract XVMCtreasury {
   address public immutable token; // XVMC token(address)
 
   /// @notice Event emitted when new transaction is executed
@@ -21,6 +21,11 @@ contract XVMCtreasury is Ownable {
   constructor(address _XVMC) {
    token = _XVMC;
   }
+  
+   modifier onlyOwner() {
+    require(msg.sender == IToken(xvmc).governor(), "admin: wut?");
+    _;
+   }
 
   /**
    * Initiate withdrawal from treasury wallet
@@ -32,13 +37,6 @@ contract XVMCtreasury is Ownable {
     else IERC20(_token).transfer(_receiver, _value);
 
     emit ExecuteTransaction(_token, _receiver, _value);
-  }
-
-  /**
-   * Updates to the governor address(owner of masterchef(who owns the token))
-   */
-  function changeGovernor() external {
-    _transferOwnership(IToken(token).governor());
   }
 
   /// @notice Fallback functions to receive native tokens
