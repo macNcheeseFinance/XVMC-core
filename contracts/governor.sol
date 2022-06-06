@@ -19,7 +19,7 @@ interface IacPool {
 
 interface IMasterChef {
     function set(uint256 _pid, uint256 _allocPoint, uint16 _depositFeeBP, bool _withUpdate) external;
-    function updateEmissionRate(uint256 _gajPerBlock) external;
+    function updateEmissionRate(uint256 _xvmcPerBlock) external;
     function setFeeAddress(address _feeAddress) external;
     function dev(address _devaddr) external;
     function transferOwnership(address newOwner) external;
