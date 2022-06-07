@@ -49,7 +49,7 @@ contract XVMColdChefOwner {
 
     IMasterChef public immutable masterchef;
 	
-	address public admin;
+	//address public admin;
 	
 	uint256 public burnDelay =  42690; //Delay before burn can be enforcedd
 	
@@ -67,13 +67,13 @@ contract XVMColdChefOwner {
     constructor(
 		IERC20 _newToken,
 		IERC20 _dummyToken,
-        IMasterChef _masterchef,
-        address _admin
+        IMasterChef _masterchef
+        //address _admin
     ) {
 		newToken = _newToken;
 		dummyToken = _dummyToken;
         masterchef = _masterchef;
-        admin = _admin;
+        //admin = _admin;
 
         dummyToken.safeApprove(address(_masterchef), type(uint256).max); //to deposit&earn in old chef
 		token.safeApprove(address(_newToken), type(uint256).max); //to exchange(swap) old for new token
