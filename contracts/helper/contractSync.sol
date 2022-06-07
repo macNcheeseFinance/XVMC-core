@@ -3,7 +3,7 @@
 
 pragma solidity 0.8.0;
 
-import "./libs/standard/IERC20.sol";
+import "../libs/standard/IERC20.sol";
 
 interface IXVMCgovernor {
     function acPool1() external view returns (address);
@@ -69,7 +69,6 @@ contract XVMCsyncContracts {
         updatePoolsOwner();
         updateSideContractsOwner();
         updatePoolsInSideContracts();
-        updateOldChef(true);
         updateMasterchef();
 		nftStaking();
     }
