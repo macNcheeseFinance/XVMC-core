@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0/contracts/security/ReentrancyGuard.sol";
+
+interface IChainlink {
+	function latestAnswer() external view returns (int256);
+}
+
+interface IOracle {
+	function getPrice() external view returns(uint256);
+}
+
+contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
+	address public immutable XVMC; //token address
+	address public immutable buybackContract; // treasury 
+
+    uint256 public tokenCount;
+
+
+	uint256 public rate = 10; // 10USDC per NFT. 8 decimals for USDC!
+	uint256 public maticRate;
+	uint256 public wethRate;
+	uint256 public xvmcRate;
+
+    address public immutable wETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
+	address public immutable usdc = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+
+	address public chainlinkWETH = 0xF9680D99D6C9589e2a93a78A04A279e509205945;
+	address public chainlinkMATIC = 0xAB594600376Ec9fD91F8e885dADF0CE036862dE0;
+	address public xvmcOracle;
+	
+	event SetTokenURI(uint256 tokenID, string URI);
+
+    constructor(address _xvmc, address _buyBackContract, address _oracle) ERC721("Mac&Cheese Virtual Land", "XVMC Land") {
+		XVMC = _xvmc;
+		buybackContract = _buyBackContract;
+		xvmcOracle = _oracle;
+	}
+
+    function mintNFTwithMATIC(uint256[] calldata landPlotIDs) external nonReentrant {
+		require(tokenCount + landPlotIDs.length <= 10000, "10 000 land plot limit reached");
+		payable(buybackContract).transfer(landPlotIDs.length * maticRate);
+		tokenCount+= landPlotIDs.length;
+        for(uint i=0; i < landPlotIDs.length; i++) {
+			require(landPlotIDs[i] < 10000, "maximum 10 000 mints");
+			_mint(msg.sender, landPlotIDs[i]);
+        }
+    }
+
+	function mintNFTwithUSDC(uint256[] calldata landPlotIDs) external nonReentrant {
+		require(tokenCount + landPlotIDs.length <= 10000, "10 000 land plot limit reached");
+		require(IERC20(usdc).transferFrom(msg.sender, buybackContract, landPlotIDs.length * rate * 1e8), "ERC20 transfer failed");
+		tokenCount+= landPlotIDs.length;
+        for(uint i=0; i < landPlotIDs.length; i++) {
+			require(landPlotIDs[i] < 10000, "maximum 10 000 mints");
+			_mint(msg.sender, landPlotIDs[i]);
+        }
+    }
+
+	function mintNFTwithWETH(uint256[] calldata landPlotIDs) external nonReentrant {
+		require(tokenCount + landPlotIDs.length <= 10000, "10 000 land plot limit reached");
+		require(IERC20(wETH).transferFrom(msg.sender, buybackContract, landPlotIDs.length * wethRate), "ERC20 transfer failed");
+		tokenCount+= landPlotIDs.length;
+        for(uint i=0; i < landPlotIDs.length; i++) {
+			require(landPlotIDs[i] < 10000, "maximum 10 000 mints");
+			_mint(msg.sender, landPlotIDs[i]);
+        }
+    }
+
+	function mintNFTwithXVMC(uint256[] calldata landPlotIDs) external nonReentrant {
+		require(tokenCount + landPlotIDs.length <= 10000, "10 000 land plot limit reached");
+		require(IERC20(XVMC).transferFrom(msg.sender, buybackContract, landPlotIDs.length * xvmcRate), "ERC20 transfer failed");
+		tokenCount+= landPlotIDs.length;
+        for(uint i=0; i < landPlotIDs.length; i++) {
+			require(landPlotIDs[i] < 10000, "maximum 10 000 mints");
+			_mint(msg.sender, landPlotIDs[i]);
+        }
+    }
+	
+	// users can set land outlook
+	function setTokenURI(uint256 _tokenId, string memory _tokenURI) external {
+		require(msg.sender == ownerOf(_tokenId), "you are not the token owner!");
+		_setTokenURI(_tokenId, _tokenURI);
+		emit SetTokenURI(_tokenId, _tokenURI);
+	}
+
+    function updateRates() external {
+		uint256 maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer());
+		uint256 wETHprice = uint256(IChainlink(chainlinkWETH).latestAnswer());
+
+		maticRate = maticPrice * rate * 1e10; // MATIC 18 decimals BUT must divide with 1e8 for chainlink
+		wethRate = wETHprice * rate * 1e10;
+
+		xvmcRate = IOracle(xvmcOracle).getPrice() * maticPrice * rate * 1e10;
+    }
+}
