@@ -32,9 +32,13 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 	
 	event SetTokenURI(uint256 tokenID, string URI);
 
-    constructor(address _buyBackContract, address _oracle) ERC721("Mac&Cheese Virtual Land", "XVMC Land") {
+    constructor(address _buyBackContract, address _oracle, address _xvmcNftTreasury) ERC721("Mac&Cheese Virtual Land", "XVMC Land") {
 		buybackContract = _buyBackContract;
 		xvmcOracle = _oracle;
+		_mint(_xvmcNftTreasury, 0);
+		_mint(_xvmcNftTreasury, 1);
+		_mint(_xvmcNftTreasury, 2);
+		_mint(_xvmcNftTreasury, 3);
 	}
 
     function mintNFTwithMATIC(uint256[] calldata landPlotIDs) external nonReentrant {
