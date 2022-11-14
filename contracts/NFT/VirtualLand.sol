@@ -30,7 +30,11 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 	address public chainlinkMATIC = 0xAB594600376Ec9fD91F8e885dADF0CE036862dE0;
 	address public xvmcOracle;
 	
+	uint256 public lastUpdate;
+	uint256 public delayPeriod = 3600;
+	
 	event SetTokenURI(uint256 tokenID, string URI);
+	event Mint(uint256 currency, address mintedTo, uint256[] mintedIds);
 
     constructor(address _buyBackContract, address _oracle, address _xvmcNftTreasury) ERC721("Mac&Cheese Virtual Land", "XVMC Land") {
 		buybackContract = _buyBackContract;
@@ -49,6 +53,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 			require(landPlotIDs[i] < 10000, "maximum 10 000 mints");
 			_mint(msg.sender, landPlotIDs[i]);
         }
+		emit Mint(0, msg.sender, landPlotIDs);
     }
 
 	function mintNFTwithUSDC(uint256[] calldata landPlotIDs) external nonReentrant {
@@ -59,6 +64,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 			require(landPlotIDs[i] < 10000, "maximum 10 000 mints");
 			_mint(msg.sender, landPlotIDs[i]);
         }
+		emit Mint(1, msg.sender, landPlotIDs);
     }
 
 	function mintNFTwithWETH(uint256[] calldata landPlotIDs) external nonReentrant {
@@ -69,6 +75,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 			require(landPlotIDs[i] < 10000, "maximum 10 000 mints");
 			_mint(msg.sender, landPlotIDs[i]);
         }
+		emit Mint(2, msg.sender, landPlotIDs);
     }
 
 	function mintNFTwithXVMC(uint256[] calldata landPlotIDs) external nonReentrant {
@@ -79,6 +86,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 			require(landPlotIDs[i] < 10000, "maximum 10 000 mints");
 			_mint(msg.sender, landPlotIDs[i]);
         }
+		emit Mint(3, msg.sender, landPlotIDs);
     }
 	
 	// users can set land outlook
@@ -89,11 +97,14 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 	}
 
     function updateRates() external {
+    	require(lastUpdate + delayPeriod > block.timestamp, "must wait delay period before updating");
 		uint256 maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer());
 		uint256 wETHprice = uint256(IChainlink(chainlinkWETH).latestAnswer());
 
 		maticRate = 1e27 / maticPrice; // 1e19 * 1e8 (to even out oracle)
 		wethRate = 1e27 / wETHprice;
 		xvmcRate = 1e19 / IOracle(xvmcOracle).getPrice();
+		
+		lastUpdate = block.timestamp;
     }
 }
