@@ -14,13 +14,11 @@ interface IOracle {
 }
 
 contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
-	address public immutable XVMC; //token address
+	address public immutable XVMC = 0x970ccEe657Dd831e9C37511Aa3eb5302C1Eb5EEe; //token address
 	address public immutable buybackContract; // treasury 
 
     uint256 public tokenCount;
 
-
-	uint256 public rate = 10; // 10USDC per NFT. 8 decimals for USDC!
 	uint256 public maticRate;
 	uint256 public wethRate;
 	uint256 public xvmcRate;
@@ -34,8 +32,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 	
 	event SetTokenURI(uint256 tokenID, string URI);
 
-    constructor(address _xvmc, address _buyBackContract, address _oracle) ERC721("Mac&Cheese Virtual Land", "XVMC Land") {
-		XVMC = _xvmc;
+    constructor(address _buyBackContract, address _oracle) ERC721("Mac&Cheese Virtual Land", "XVMC Land") {
 		buybackContract = _buyBackContract;
 		xvmcOracle = _oracle;
 	}
@@ -52,7 +49,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 
 	function mintNFTwithUSDC(uint256[] calldata landPlotIDs) external nonReentrant {
 		require(tokenCount + landPlotIDs.length <= 10000, "10 000 land plot limit reached");
-		require(IERC20(usdc).transferFrom(msg.sender, buybackContract, landPlotIDs.length * rate * 1e8), "ERC20 transfer failed");
+		require(IERC20(usdc).transferFrom(msg.sender, buybackContract, landPlotIDs.length * 1e9), "ERC20 transfer failed");
 		tokenCount+= landPlotIDs.length;
         for(uint i=0; i < landPlotIDs.length; i++) {
 			require(landPlotIDs[i] < 10000, "maximum 10 000 mints");
@@ -91,9 +88,8 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 		uint256 maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer());
 		uint256 wETHprice = uint256(IChainlink(chainlinkWETH).latestAnswer());
 
-		maticRate = maticPrice * rate * 1e10; // MATIC 18 decimals BUT must divide with 1e8 for chainlink
-		wethRate = wETHprice * rate * 1e10;
-
-		xvmcRate = IOracle(xvmcOracle).getPrice() * maticPrice * rate * 1e10;
+		maticRate = 1e27 / maticPrice; // 1e19 * 1e8 (to even out oracle)
+		wethRate = 1e27 / wETHprice;
+		xvmcRate = 1e19 / IOracle(xvmcOracle).getPrice();
     }
 }
