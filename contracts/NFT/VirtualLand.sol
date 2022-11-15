@@ -45,7 +45,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 		_mint(_xvmcNftTreasury, 3);
 	}
 
-    function mintNFTwithMATIC(uint256[] calldata landPlotIDs) external nonReentrant {
+    function mintNFTwithMATIC(uint256[] calldata landPlotIDs) payable external nonReentrant {
 		require(tokenCount + landPlotIDs.length <= 10000, "10 000 land plot limit reached");
 		payable(buybackContract).transfer(landPlotIDs.length * maticRate);
 		tokenCount+= landPlotIDs.length;
