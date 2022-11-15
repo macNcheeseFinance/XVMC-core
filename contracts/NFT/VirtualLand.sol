@@ -97,7 +97,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 	}
 
     function updateRates() external {
-    	require(lastUpdate + delayPeriod > block.timestamp, "must wait delay period before updating");
+    	require(lastUpdate + delayPeriod < block.timestamp, "must wait delay period before updating");
 		uint256 maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer());
 		uint256 wETHprice = uint256(IChainlink(chainlinkWETH).latestAnswer());
 
