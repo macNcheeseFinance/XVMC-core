@@ -58,7 +58,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 
 	function mintNFTwithUSDC(uint256[] calldata landPlotIDs) external nonReentrant {
 		require(tokenCount + landPlotIDs.length <= 10000, "10 000 land plot limit reached");
-		require(IERC20(usdc).transferFrom(msg.sender, buybackContract, landPlotIDs.length * 1e9), "ERC20 transfer failed");
+		require(IERC20(usdc).transferFrom(msg.sender, buybackContract, landPlotIDs.length * 1e7), "ERC20 transfer failed");
 		tokenCount+= landPlotIDs.length;
         for(uint i=0; i < landPlotIDs.length; i++) {
 			require(landPlotIDs[i] < 10000, "maximum 10 000 mints");
