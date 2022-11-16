@@ -103,7 +103,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 
 		maticRate = 1e27 / maticPrice; // 1e19 * 1e8 (to even out oracle)
 		wethRate = 1e27 / wETHprice;
-		xvmcRate = 1e19 / IOracle(xvmcOracle).getPrice();
+		xvmcRate =  1e19 * 1e18 / IOracle(xvmcOracle).getPrice();
 		
 		lastUpdate = block.timestamp;
     }
