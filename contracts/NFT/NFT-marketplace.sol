@@ -23,8 +23,8 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
     struct NFTsale {
         address token;
         uint256 tokenId;
-        uint256 plsPrice;
-        uint256 dtxPrice;
+        uint256 maticPrice;
+        uint256 xvmcPrice;
         address owner;
         bool isValid;
     }
@@ -48,9 +48,9 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
         xvmcToken = _xvmc;
     }
 
-    event SetNftForSale(address token, uint256 tokenId, uint256 plsPrice, uint256 dtxPrice, address indexed seller);
+    event SetNftForSale(address token, uint256 tokenId, uint256 maticPrice, uint256 xvmcPrice, address indexed seller);
     event NftSold(uint256 offeringId, address indexed buyer, address forToken, uint256 provision);
-    event UpdateSale(bool cancled, uint256 pricePls, uint256 priceXvmc);
+    event UpdateSale(bool cancled, uint256 priceMatic, uint256 priceXvmc);
 
     event CreateBid(address indexed bidder, uint256 saleId, address offeredToken, uint256 amount);
     event ChangeBid(bool accept, uint256 saleId, uint256 bidId);
@@ -58,24 +58,24 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
     receive() external payable {}
     fallback() external payable {}
 
-    function setNftForSale(address _token, uint256 _tokenId, uint256 _plsPrice, uint256 _xvmcPrice) external {
-        require (_plsPrice !=0 || _xvmcPrice !=0, "price must be non-null");
+    function setNftForSale(address _token, uint256 _tokenId, uint256 _maticPrice, uint256 _xvmcPrice) external {
+        require (_maticPrice !=0 || _xvmcPrice !=0, "price must be non-null");
         IERC721(_token).safeTransferFrom(msg.sender, address(this), _tokenId);
         nftOfferings.push(
-                NFTsale(_token, _tokenId, _plsPrice, _xvmcPrice, msg.sender, true)
+                NFTsale(_token, _tokenId, _maticPrice, _xvmcPrice, msg.sender, true)
             );
 
-        emit SetNftForSale(_token, _tokenId, _plsPrice, _xvmcPrice, msg.sender);
+        emit SetNftForSale(_token, _tokenId, _maticPrice, _xvmcPrice, msg.sender);
     }
 
-    function swapNftPls(uint256 _saleId) external payable nonReentrant {
+    function swapNftMatic(uint256 _saleId) external payable nonReentrant {
         NFTsale storage sale = nftOfferings[_saleId];
         require(sale.isValid, "already sold");
         address treasury = getTreasury();
         uint256 amount;
         uint256 fee;
-        amount = sale.plsPrice;
-        require(sale.plsPrice != 0, "only swap for XVMC is allowed");
+        amount = sale.maticPrice;
+        require(sale.maticPrice != 0, "only swap for XVMC is allowed");
         require(msg.value == amount, "incorrect amount");
         fee = amount * provision / 10000;
         amount-=fee;
@@ -96,10 +96,10 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
         uint256 amount;
         uint256 fee;
 
-        amount = sale.dtxPrice;
+        amount = sale.xvmcPrice;
         fee = amount * provision / 10000;
         amount-=fee;
-        require(sale.dtxPrice != 0, "only swap for MATIC is allowed");
+        require(sale.xvmcPrice != 0, "only swap for MATIC is allowed");
         require(IERC20(xvmcToken).transferFrom(msg.sender, treasury, fee));
         require(IERC20(xvmcToken).transferFrom(msg.sender, sale.owner, amount));
         
@@ -122,16 +122,16 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
         emit UpdateSale(true, 0, 0);
     }
 
-    function updateSale(uint256 _saleId, uint256 _plsPrice, uint256 _dtxPrice) external nonReentrant {
-        require (_plsPrice !=0 || _dtxPrice !=0, "price must be non-null");
+    function updateSale(uint256 _saleId, uint256 _maticPrice, uint256 _xvmcPrice) external nonReentrant {
+        require (_maticPrice !=0 || _xvmcPrice !=0, "price must be non-null");
         NFTsale storage sale = nftOfferings[_saleId];
         require(sale.isValid, "already sold");
         require(sale.owner == msg.sender, "not owner");
 
-        sale.plsPrice = _plsPrice;
-        sale.dtxPrice = _dtxPrice;
+        sale.maticPrice = _maticPrice;
+        sale.xvmcPrice = _xvmcPrice;
 
-        emit UpdateSale(false, _plsPrice, _dtxPrice);
+        emit UpdateSale(false, _maticPrice, _xvmcPrice);
     }
 
     function updateFee(uint256 _provision) external {
