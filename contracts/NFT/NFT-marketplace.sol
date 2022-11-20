@@ -177,6 +177,7 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
         _bid.isValid = false;
 
         emit ChangeBid(true, _saleId, _bidId);
+        emit NftSold(_saleId, msg.sender, _bid.offeredToken, fee);
     }
 
     function pullBid(uint256 _saleId, uint256 _bidId) external nonReentrant {
