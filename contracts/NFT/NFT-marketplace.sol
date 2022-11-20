@@ -48,9 +48,9 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
         xvmcToken = _xvmc;
     }
 
-    event SetNftForSale(address token, uint256 tokenId, uint256 maticPrice, uint256 xvmcPrice, address indexed seller);
+    event SetNftForSale(uint256 saleId, address token, uint256 tokenId, uint256 maticPrice, uint256 xvmcPrice, address indexed seller);
     event NftSold(uint256 offeringId, address indexed buyer, address forToken, uint256 provision);
-    event UpdateSale(bool cancled, uint256 priceMatic, uint256 priceXvmc);
+    event UpdateSale(bool cancled, uint256 saleId, uint256 priceMatic, uint256 priceXvmc);
 
     event CreateBid(address indexed bidder, uint256 saleId, address offeredToken, uint256 amount);
     event ChangeBid(bool accept, uint256 saleId, uint256 bidId);
@@ -65,7 +65,7 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
                 NFTsale(_token, _tokenId, _maticPrice, _xvmcPrice, msg.sender, true)
             );
 
-        emit SetNftForSale(_token, _tokenId, _maticPrice, _xvmcPrice, msg.sender);
+        emit SetNftForSale(nftOfferings.length-1, _token, _tokenId, _maticPrice, _xvmcPrice, msg.sender);
     }
 
     function swapNftMatic(uint256 _saleId) external payable nonReentrant {
@@ -119,7 +119,7 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
 
         sale.isValid = false;
 
-        emit UpdateSale(true, 0, 0);
+        emit UpdateSale(true, _saleId, 0, 0);
     }
 
     function updateSale(uint256 _saleId, uint256 _maticPrice, uint256 _xvmcPrice) external nonReentrant {
@@ -131,7 +131,7 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
         sale.maticPrice = _maticPrice;
         sale.xvmcPrice = _xvmcPrice;
 
-        emit UpdateSale(false, _maticPrice, _xvmcPrice);
+        emit UpdateSale(false, _saleId, _maticPrice, _xvmcPrice);
     }
 
     function updateFee(uint256 _provision) external {
