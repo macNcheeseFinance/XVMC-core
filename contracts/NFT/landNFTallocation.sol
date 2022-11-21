@@ -3,6 +3,7 @@ pragma solidity 0.8.0;
 
 contract NftAllocationSpecific {
 	address public immutable landNftContract;
+	address public immutable initAddress;
 	
 	uint256 public baseAllocation = 25 * 1e6 *1e18; //25M
 
@@ -10,6 +11,7 @@ contract NftAllocationSpecific {
 
     constructor(address _contract) {
         landNftContract = _contract;
+	initAddress = msg.sender;
     }
 	
 	function nftAllocation(address _tokenAddress, uint256 _tokenID) external view returns (uint256) {
@@ -18,6 +20,7 @@ contract NftAllocationSpecific {
 	}
 
     function initialize(uint256 startId, uint256[] calldata _allocations) external {
+    	require(msg.sender == initAddress, "not allowed");
         require(allocation[9999] == 0, "already initialized");
         for(uint i=0; i < _allocations.length; i++) {
             allocation[i] = _allocations[startId + i];
