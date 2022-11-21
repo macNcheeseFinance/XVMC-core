@@ -165,8 +165,8 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
         uint256 fee = _bid.amount * provision / 10000;
 
         if(_bid.offeredToken != address(1337)) {
-            require(IERC20(_bid.offeredToken).transferFrom(address(this), getTreasury(), fee), "transfer failed");
-            require(IERC20(_bid.offeredToken).transferFrom(address(this), msg.sender, (_bid.amount-fee)), "transfer failed");
+            require(IERC20(_bid.offeredToken).transfer(getTreasury(), fee), "transfer failed");
+            require(IERC20(_bid.offeredToken).transfer(msg.sender, (_bid.amount-fee)), "transfer failed");
         } else {
             payable(getTreasury()).transfer(fee);
             payable(msg.sender).transfer(_bid.amount-fee);
@@ -185,7 +185,11 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
         require(msg.sender == _bid.bidder, "owner only");
         require(_bid.isValid, "invalid");
 
-        require(IERC20(_bid.offeredToken).transferFrom(address(this), msg.sender, _bid.amount), "transfer failed");
+        if(_bid.offeredToken != address(1337)) {
+            require(IERC20(_bid.offeredToken).transfer(msg.sender, _bid.amount), "transfer failed");
+        } else {
+            payable(msg.sender).transfer(_bid.amount);
+        }
         _bid.isValid = false;
 
         emit ChangeBid(false, _saleId, _bidId);
