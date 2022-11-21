@@ -17,10 +17,10 @@ contract NftAllocationSpecific {
 		return allocation[_tokenID];
 	}
 
-    function initialize(uint256[] calldata _allocations) external {
+    function initialize(uint256 startId, uint256[] calldata _allocations) external {
         require(allocation[9999] == 0, "already initialized");
         for(uint i=0; i < _allocations.length; i++) {
-            allocation[i] = _allocations[i];
+            allocation[i] = _allocations[startId + i];
         }
     }
 
