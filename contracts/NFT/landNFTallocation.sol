@@ -14,7 +14,7 @@ contract NftAllocationSpecific {
 
     constructor(address _contract) {
         landNftContract = _contract;
-	initAddress = msg.sender;
+		initAddress = msg.sender;
     }
 	
 	function nftAllocation(address _tokenAddress, uint256 _tokenID) external view returns (uint256) {
