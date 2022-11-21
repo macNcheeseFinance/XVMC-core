@@ -5,7 +5,10 @@ contract NftAllocationSpecific {
 	address public immutable landNftContract;
 	address public immutable initAddress;
 	
+	bool public canChange = true;
+	
 	uint256 public baseAllocation = 25 * 1e6 *1e18; //25M
+	uint256 public addressesInitialized;
 
     mapping(uint256 => uint256) public allocation;
 
@@ -19,12 +22,16 @@ contract NftAllocationSpecific {
 		return allocation[_tokenID];
 	}
 
-    function initialize(uint256 startId, uint256[] calldata _allocations) external {
+    function initialize(uint256 startId, uint256[] calldata _allocations, bool endInit) external {
     	require(msg.sender == initAddress, "not allowed");
-        require(allocation[9999] == 0, "already initialized");
+        require(canChange, "already initialized");
         for(uint i=0; i < _allocations.length; i++) {
             allocation[i] = _allocations[startId + i];
+			addressesInitialized++;
         }
+		if(endInit) {
+			canChange = false;
+		}
     }
 
     function getAllocationManually(uint256 _tokenID) external view returns (uint256) {
