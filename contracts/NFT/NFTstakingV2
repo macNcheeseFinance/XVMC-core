@@ -391,10 +391,10 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
 		return _totalPending;
     }
 	//we want user deposit, we want total deposited, we want pending rewards, 
-	function multiCall(address _user, uint256 _stakeID) external view returns(uint256, uint256, uint256) {
+	function multiCall(address _user, uint256 _stakeID) external view returns(uint256, uint256, uint256, address, uint256) {
 		UserInfo storage user = userInfo[_user][_stakeID];
 		uint256 _pending = user.allocation * virtualaccXvmcPerShare() / 1e12 - user.debt;
-		return(user.allocation, totalAllocation, _pending);
+		return(user.allocation, totalAllocation, _pending, user.tokenAddress, user.tokenID);
 	}
 	
 
