@@ -6,6 +6,7 @@ import "https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/in
 
 interface IXVMC {
 	function governor() external view returns (address);
+	function burn(uint256 amount) external;
 }
 
 interface IGovernor {
@@ -13,13 +14,15 @@ interface IGovernor {
 }
 
 contract BuybackXVMC {
-    address internal constant UNISWAP_ROUTER_ADDRESS = 0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff;
-    address internal constant XVMC = 0x970ccEe657Dd831e9C37511Aa3eb5302C1Eb5EEe;
+    address public constant UNISWAP_ROUTER_ADDRESS = 0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff;
+    address public constant XVMC = 0x970ccEe657Dd831e9C37511Aa3eb5302C1Eb5EEe;
 
     IUniswapV2Router02 public uniswapRouter;
 
     address public immutable wETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
 	address public immutable usdc = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+	
+	bool public toBurn = true;
 
     constructor() {
         uniswapRouter = IUniswapV2Router02(UNISWAP_ROUTER_ADDRESS);
@@ -27,30 +30,46 @@ contract BuybackXVMC {
         IERC20(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174).approve(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff, type(uint256).max); // infinite allowance for USDC to quickswap router
     }
 
-    function buybackMATIC() external {
+    function buybackMATIC() public {
         uint deadline = block.timestamp + 15; 
         uint[] memory _minOutT = getEstimatedXVMCforETH(address(this).balance);
         uint _minOut = _minOutT[_minOutT.length-1] * 99 / 100;
         uniswapRouter.swapETHForExactTokens{ value: address(this).balance }(_minOut, getMATICpath(), address(this), deadline);
     }
 
-    function buybackWETH() external {
+    function buybackWETH() public {
         uint deadline = block.timestamp + 15; 
         uint[] memory _minOutT = getEstimatedXVMCforWETH(address(this).balance);
         uint _minOut = _minOutT[_minOutT.length-1] * 99 / 100;
         uniswapRouter.swapETHForExactTokens(_minOut, getWETHpath(), address(this), deadline);
     }
 
-    function buybackUSDC() external {
+    function buybackUSDC() public {
         uint deadline = block.timestamp + 15; 
         uint[] memory _minOutT = getEstimatedXVMCforUSDC(address(this).balance);
         uint _minOut = _minOutT[_minOutT.length-1] * 99 / 100;
         uniswapRouter.swapETHForExactTokens(_minOut, getUSDCpath(), address(this), deadline);
     }
-
-
-    function sendXVMCtoTreasury() external {
-        require(IERC20(XVMC).transfer(treasury(), IERC20(XVMC).balanceOf(address(this))));
+	
+	function buybackAndBurn(bool _matic, bool _weth, bool _usdc) external {
+		if(_matic) {
+			buybackMATIC();
+		}
+		if(_weth) {
+			buybackWETH();
+		}
+		if(_usdc) {
+			buybackUSDC();
+		}
+		burnTokens();
+	}
+	
+    function burnTokens() public {
+		if(toBurn) {
+			IXVMC(XVMC).burn(IERC20(XVMC).balanceOf(address(this)));
+		} else {
+        	require(IERC20(XVMC).transfer(treasury(), IERC20(XVMC).balanceOf(address(this))));
+		}
     }
 
     function withdraw() external {
@@ -60,6 +79,11 @@ contract BuybackXVMC {
         IERC20(usdc).transfer(treasury(), IERC20(usdc).balanceOf(address(this)));
         IERC20(wETH).transfer(treasury(), IERC20(wETH).balanceOf(address(this)));
     }
+	
+	function switchBurn(bool _option) external {
+		require(msg.sender == governor(), "only thru decentralized Governance");
+		toBurn = _option;
+	}
 
     //with gets amount in you provide how much you want out
     function getEstimatedXVMCforETH(uint _eth) public view returns (uint[] memory) {
