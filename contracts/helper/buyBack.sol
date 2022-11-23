@@ -107,7 +107,7 @@ contract BuybackXVMC {
     }
 
     function getWETHpath() private view returns (address[] memory) {
-        address[] memory path = new address[](2);
+        address[] memory path = new address[](3);
         path[0] = wETH; //wETH is wrapped Ethereum on Polygon
         path[1] = uniswapRouter.WETH(); // uni.WETH == wrapped MATIC 
         path[2] = XVMC;
@@ -116,7 +116,7 @@ contract BuybackXVMC {
     }
 
     function getUSDCpath() private view returns (address[] memory) {
-        address[] memory path = new address[](2);
+        address[] memory path = new address[](3);
         path[0] = usdc;
         path[1] = uniswapRouter.WETH();
         path[2] = XVMC;
