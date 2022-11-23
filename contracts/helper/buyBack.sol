@@ -32,23 +32,23 @@ contract BuybackXVMC {
 
     function buybackMATIC() public {
         uint deadline = block.timestamp + 15; 
-        uint[] memory _minOutT = getEstimatedXVMCforETH(address(this).balance);
+        uint[] memory _minOutT = getEstimatedXVMCforETH();
         uint _minOut = _minOutT[_minOutT.length-1] * 99 / 100;
         uniswapRouter.swapETHForExactTokens{ value: address(this).balance }(_minOut, getMATICpath(), address(this), deadline);
     }
 
     function buybackWETH() public {
         uint deadline = block.timestamp + 15; 
-        uint[] memory _minOutT = getEstimatedXVMCforWETH(address(this).balance);
+        uint[] memory _minOutT = getEstimatedXVMCforWETH();
         uint _minOut = _minOutT[_minOutT.length-1] * 99 / 100;
-        uniswapRouter.swapETHForExactTokens(_minOut, getWETHpath(), address(this), deadline);
+        uniswapRouter.swapTokensForExactTokens(_minOut, IERC20(wETH).balanceOf(address(this)), getWETHpath(), address(this), deadline);
     }
 
     function buybackUSDC() public {
         uint deadline = block.timestamp + 15; 
-        uint[] memory _minOutT = getEstimatedXVMCforUSDC(address(this).balance);
+        uint[] memory _minOutT = getEstimatedXVMCforUSDC();
         uint _minOut = _minOutT[_minOutT.length-1] * 99 / 100;
-        uniswapRouter.swapETHForExactTokens(_minOut, getUSDCpath(), address(this), deadline);
+        uniswapRouter.swapTokensForExactTokens(_minOut, IERC20(usdc).balanceOf(address(this)), getUSDCpath(), address(this), deadline);
     }
 	
 	function buybackAndBurn(bool _matic, bool _weth, bool _usdc) external {
@@ -86,16 +86,16 @@ contract BuybackXVMC {
 	}
 
     //with gets amount in you provide how much you want out
-    function getEstimatedXVMCforETH(uint _eth) public view returns (uint[] memory) {
-        return uniswapRouter.getAmountsOut(_eth, getMATICpath()); //NOTICE: ETH is matic MATIC
+    function getEstimatedXVMCforETH() public view returns (uint[] memory) {
+        return uniswapRouter.getAmountsOut(address(this).balance, getMATICpath()); //NOTICE: ETH is matic MATIC
     }
 
-    function getEstimatedXVMCforWETH(uint _weth) public view returns (uint[] memory) {
-        return uniswapRouter.getAmountsOut(_weth, getWETHpath());
+    function getEstimatedXVMCforWETH() public view returns (uint[] memory) {
+        return uniswapRouter.getAmountsOut(IERC20(wETH).balanceOf(address(this)), getWETHpath());
     }
 
-    function getEstimatedXVMCforUSDC(uint _usdc) public view returns (uint[] memory) {
-        return uniswapRouter.getAmountsOut(_usdc, getUSDCpath());
+    function getEstimatedXVMCforUSDC() public view returns (uint[] memory) {
+        return uniswapRouter.getAmountsOut(IERC20(usdc).balanceOf(address(this)), getUSDCpath());
     }
 
     function getMATICpath() private view returns (address[] memory) {
