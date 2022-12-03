@@ -340,8 +340,8 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
         if(_callFee == 0) { _callFee = defaultFeeToPay; }
 
         for(uint256 i = 0; i<_stakeID.length; i++) {
-            _toWithdraw = user[i].allocation * accXvmcPerShare / 1e12 - user[i].debt;
-            user[i].debt = user[i].allocation * accXvmcPerShare / 1e12;
+            _toWithdraw = user[_stakeID[i]].allocation * accXvmcPerShare / 1e12 - user[_stakeID[i]].debt;
+            user[_stakeID[i]].debt = user[_stakeID[i]].allocation * accXvmcPerShare / 1e12;
             _totalWithdraw+= _toWithdraw;
         }
 
