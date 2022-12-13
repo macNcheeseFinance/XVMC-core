@@ -22,15 +22,22 @@ contract BuybackXVMC {
     address public immutable wETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
 	address public immutable usdc = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
 	
+	address public canPause;
+	
 	bool public toBurn = true;
+	
+	bool paused = false;
 
     constructor() {
+		canPause = msg.sender;
         uniswapRouter = IUniswapV2Router02(UNISWAP_ROUTER_ADDRESS);
         IERC20(0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619).approve(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff, type(uint256).max); // infinite allowance for wETH to quickswap router
         IERC20(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174).approve(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff, type(uint256).max); // infinite allowance for USDC to quickswap router
     }
 
     function buybackMATIC() public {
+    	require(msg.sender == tx.origin);
+		require(!paused, "Buy-Backs are paused");
         uint deadline = block.timestamp + 15; 
         uint[] memory _minOutT = getEstimatedXVMCforETH();
         uint _minOut = _minOutT[_minOutT.length-1] * 99 / 100;
@@ -38,6 +45,8 @@ contract BuybackXVMC {
     }
 
     function buybackWETH() public {
+    	require(msg.sender == tx.origin);
+		require(!paused, "Buy-Backs are paused");
         uint deadline = block.timestamp + 15; 
         uint[] memory _minOutT = getEstimatedXVMCforWETH();
         uint _minOut = _minOutT[_minOutT.length-1] * 99 / 100;
@@ -45,6 +54,8 @@ contract BuybackXVMC {
     }
 
     function buybackUSDC() public {
+    	require(msg.sender == tx.origin);
+		require(!paused, "Buy-Backs are paused");
         uint deadline = block.timestamp + 15; 
         uint[] memory _minOutT = getEstimatedXVMCforUSDC();
         uint _minOut = _minOutT[_minOutT.length-1] * 99 / 100;
@@ -83,6 +94,11 @@ contract BuybackXVMC {
 	function switchBurn(bool _option) external {
 		require(msg.sender == governor(), "only thru decentralized Governance");
 		toBurn = _option;
+	}
+	
+	function pauseBuyback(bool _setting) external {
+		require(msg.sender == canPause, "not allowed");
+		paused = _setting;
 	}
 
     //with gets amount in you provide how much you want out
