@@ -26,7 +26,7 @@ contract BuybackXVMC {
 	
 	bool public toBurn = true;
 	
-	bool paused = false;
+	bool public paused = false;
 
     constructor() {
 		canPause = msg.sender;
