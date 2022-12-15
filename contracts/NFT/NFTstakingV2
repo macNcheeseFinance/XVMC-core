@@ -61,27 +61,27 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
         uint256 minServe;
     }
 
-    IERC20 public immutable token; // XVMC token
+    IERC20 public immutable token = IERC20(0x970ccEe657Dd831e9C37511Aa3eb5302C1Eb5EEe); // XVMC token
 	
-    IERC20 public immutable dummyToken; 
+    IERC20 public immutable dummyToken = IERC20(0xb18058232d1f945c19cc6988ccd19498f5d2853b); 
 
-    IMasterChef public masterchef;  
+    IMasterChef public masterchef = IMasterChef(0x6ff40a8a1fe16075bD6008A48befB768BE08b4b0);  
 
     mapping(address => UserInfo[]) public userInfo;
     mapping(address => UserSettings) public userSettings; 
     mapping(address => PoolPayout) public poolPayout; //determines the percentage received depending on withdrawal option
  
-	uint256 public poolID; 
+	uint256 public poolID = 10; 
     uint256 public totalAllocation = 10000;
     uint256 public accXvmcPerShare;
     address public admin; //admin = governing contract!
     address public treasury; //penalties
-    address public allocationContract; // PROXY CONTRACT for looking up allocations
+    address public allocationContract = 0x765a3045902b164da1a7619bec58de64cf7bdfe2; // PROXY CONTRACT for looking up allocations
 
     uint256 public tokenDebt; //sum of allocations of all deposited NFTs
 
     //if user settings not set, use default
-    address public defaultHarvest; //pool address to harvest into
+    address public defaultHarvest = 0x605c5AA14BdBf0d50a99836e7909C631cf3C8d46; //pool address to harvest into
     uint256 public defaultHarvestThreshold = 1000000;
     uint256 public defaultFeeToPay = 250; //fee for calling 2.5% default
 
@@ -105,23 +105,11 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
      * @param _treasury: address of the treasury (collects fees)
      */
     constructor(
-        IERC20 _token,
-        IERC20 _dummyToken,
-        IMasterChef _masterchef,
         address _admin,
-        address _treasury,
-        uint256 _poolID,
-        address _allocationContract,
-		address _longestPool
+        address _treasury
     ) {
-        token = _token;
-        dummyToken = _dummyToken;
-        masterchef = _masterchef;
         admin = _admin;
         treasury = _treasury;
-        poolID = _poolID;
-        allocationContract = _allocationContract;
-		defaultHarvest = _longestPool;
 
 		
         IERC20(_dummyToken).safeApprove(address(_masterchef), type(uint256).max);
