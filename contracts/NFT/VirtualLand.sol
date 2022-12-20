@@ -13,7 +13,14 @@ interface IOracle {
 	function getPrice() external view returns(uint256);
 }
 
+interface IXvmc {
+	function governor() external view returns (address);
+}
+
 contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
+	string private _name;
+    string private _symbol;
+	
 	address public immutable XVMC = 0x970ccEe657Dd831e9C37511Aa3eb5302C1Eb5EEe; //token address
 	address public immutable buybackContract; // treasury 
 
@@ -49,6 +56,11 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 			_mint(_auctionContract, i);
 		}
 	}
+	
+	modifier decentralizedVoting {
+    	require(msg.sender == IXvmc(XVMC).governor(), "Governor only, decentralized voting required");
+    	_;
+    }
 
     function mintNFTwithMATIC(uint256[] calldata landPlotIDs) payable external nonReentrant {
 		require(tokenCount + landPlotIDs.length <= 10000, "10 000 land plot limit reached");
@@ -111,5 +123,29 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 		xvmcRate =  1e19 * 1e18 / IOracle(xvmcOracle).getPrice();
 		
 		lastUpdate = block.timestamp;
+    }
+	
+	//Standard ERC20 makes name and symbol immutable
+	//We add potential to rebrand for full flexibility if stakers choose to do so through voting
+	function rebrandName(string memory _newName) external decentralizedVoting {
+		_name = _newName;
+	}
+	function rebrandSymbol(string memory _newSymbol) external decentralizedVoting {
+        _symbol = _newSymbol;
+	}
+	
+    /**
+     * @dev Returns the name of the token.
+     */
+    function name() public override view returns (string memory) {
+        return _name;
+    }
+
+    /**
+     * @dev Returns the symbol of the token, usually a shorter version of the
+     * name.
+     */
+    function symbol() public override view returns (string memory) {
+        return _symbol;
     }
 }
