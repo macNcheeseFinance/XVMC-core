@@ -2,7 +2,7 @@
 pragma solidity 0.8.0;
 
 contract NftAllocationSpecific {
-	address public immutable landNftContract;
+	address public landNftContract;
 	address public immutable initAddress;
 	
 	bool public canChange = true;
@@ -12,7 +12,7 @@ contract NftAllocationSpecific {
 
     mapping(uint256 => uint256) public allocation;
 
-    constructor(address _contract) {
+    constructor() {
 		initAddress = msg.sender;
     }
 	
