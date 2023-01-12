@@ -21,11 +21,11 @@ contract NftAllocationSpecific {
 		return allocation[_tokenID];
 	}
 
-    function initialize(uint256 startId, uint256[] calldata _allocations, bool endInit, address _landNftContract) external {
+    function initialize(uint256[] calldata _allocations, bool endInit, address _landNftContract) external {
     	require(msg.sender == initAddress, "not allowed");
         require(canChange, "already initialized");
         for(uint i=0; i < _allocations.length; i++) {
-            allocation[i] = _allocations[startId + i];
+            allocation[addressesInitialized] = _allocations[i];
 			addressesInitialized++;
         }
 		if(endInit) {
