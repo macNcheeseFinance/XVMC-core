@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: UNLICENSED
+//SPDX-License-Identifier: NONE
 pragma solidity 0.8.0;
 
 contract NftAllocationSpecific {
@@ -13,7 +13,6 @@ contract NftAllocationSpecific {
     mapping(uint256 => uint256) public allocation;
 
     constructor(address _contract) {
-        landNftContract = _contract;
 		initAddress = msg.sender;
     }
 	
@@ -22,7 +21,7 @@ contract NftAllocationSpecific {
 		return allocation[_tokenID];
 	}
 
-    function initialize(uint256 startId, uint256[] calldata _allocations, bool endInit) external {
+    function initialize(uint256 startId, uint256[] calldata _allocations, bool endInit, address _landNftContract) external {
     	require(msg.sender == initAddress, "not allowed");
         require(canChange, "already initialized");
         for(uint i=0; i < _allocations.length; i++) {
@@ -31,6 +30,7 @@ contract NftAllocationSpecific {
         }
 		if(endInit) {
 			canChange = false;
+            landNftContract = _landNftContract;
 		}
     }
 
