@@ -195,6 +195,32 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
         emit ChangeBid(false, _saleId, _bidId);
     }
 	
+	// If sale is succesful or cancled, anyone can refund pending bids
+	function publicRefund(calldata[] uint256 _saleId, calldata[] uint256 _bidId) external nonReentrant {
+		require(_saleId.length == _bidId.length, "invalid entry");
+	
+		NFTsale storage sale;
+		Offer storage _bid;
+		
+		for(uint i = 0; i < _saleId.length; i++) {
+			sale = nftOfferings[_saleId[i]];
+			_bid = bids[_saleId[i]][_bidId[i]];
+			require(!sale.isValid, "sale still valid");
+			require(_bid.isValid, "bid is invalid");
+
+			if(_bid.offeredToken != address(1337)) {
+				require(IERC20(_bid.offeredToken).transfer(_bid.bidder, _bid.amount), "transfer failed");
+			} else {
+				payable(_bid.bidder).transfer(_bid.amount);
+			}
+			
+			_bid.isValid = false;
+
+			emit ChangeBid(false, _saleId[i], _bidId[i]);
+		}
+		
+	}
+	
 	function nrOfBids(uint256 _saleId) external view returns (uint256) {
 		return bids(_saleId).length;
 	}
