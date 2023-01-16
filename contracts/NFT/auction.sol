@@ -135,11 +135,6 @@ contract XVMCnftAuction is ERC721Holder {
         nrOfBids[saleId] = IMarketplace(marketplaceContract).nrOfBids(saleId);
     }
 
-    //CURRENT PROBLEM: YOU COULD MAKE THE BID, THEN PULL IT, AND REPLACE WITH A BOGUS ONE
-    // how do we solve this?
-    //when replacing highestbid, make delay before it can be enforced ??
-    //YEH CREATE SAFETIME after reserving highest bid(1hr or whatever)
-    //and also give option to change reservehighestbid IF the bidid is cancled
 
     function reserveHighestBid(uint256 saleId, uint256 bidId) external {
         require(bidId < nrOfBids[saleId], "invalid bid");
