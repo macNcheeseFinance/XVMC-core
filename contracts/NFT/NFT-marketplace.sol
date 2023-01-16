@@ -196,7 +196,7 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
     }
 	
 	// If sale is succesful or cancled, anyone can refund pending bids
-	function publicRefund(calldata[] uint256 _saleId, calldata[] uint256 _bidId) external nonReentrant {
+	function publicRefund(uint256[] calldata _saleId, uint256[] calldata _bidId) external nonReentrant {
 		require(_saleId.length == _bidId.length, "invalid entry");
 	
 		NFTsale storage sale;
@@ -222,7 +222,7 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
 	}
 	
 	function nrOfBids(uint256 _saleId) external view returns (uint256) {
-		return bids(_saleId).length;
+		return bids[_saleId].length;
 	}
 
     function getTreasury() public view returns(address) {
