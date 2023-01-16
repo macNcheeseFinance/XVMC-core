@@ -194,6 +194,10 @@ contract NFTmarketplace is ERC721Holder, ReentrancyGuard {
 
         emit ChangeBid(false, _saleId, _bidId);
     }
+	
+	function nrOfBids(uint256 _saleId) external view returns (uint256) {
+		return bids(_saleId).length;
+	}
 
     function getTreasury() public view returns(address) {
         return IGovernor(getGovernor()).treasuryWallet();
