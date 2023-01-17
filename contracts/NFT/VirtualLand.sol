@@ -54,7 +54,7 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 		_mint(_xvmcNftTreasury, 3);
 		
 		// mint first district to contract that auctions them on the market
-		for(uint i=4; i < 20; i++) {
+		for(uint i=4; i < 180; i++) {
 			_mint(_auctionContract, i);
 		}
 	}
