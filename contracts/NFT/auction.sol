@@ -76,7 +76,7 @@ contract XVMCnftAuction is ERC721Holder {
         }
     }
 
-    function acceptHighestBid(uint256 saleId, uint256 bidId) external {
+    function acceptHighestBid(uint256 saleId) external {
         require(block.timestamp > auctionEnd, "auction is still on-going!");
         uint256 _bidLength = IMarketplace(marketplaceContract).nrOfBids(saleId);
 
@@ -86,7 +86,7 @@ contract XVMCnftAuction is ERC721Holder {
         uint256 highestOffer;
         uint256 highestOfferId;
         for(uint i = 0; i < _bidLength; i++) {
-            ( , address _token, uint256 _bidAmount, bool _valid) = IMarketplace(marketplaceContract).bids(saleId, bidId);
+            ( , address _token, uint256 _bidAmount, bool _valid) = IMarketplace(marketplaceContract).bids(saleId, i);
             if(_valid) {
                 if(_token == xvmc) {
                     uint256 currentBid = _bidAmount * _xvmcPrice;
