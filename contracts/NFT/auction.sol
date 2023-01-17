@@ -81,8 +81,8 @@ contract XVMCnftAuction is ERC721Holder {
         require(block.timestamp > auctionEnd, "auction is still on-going!");
         uint256 _bidLength = IMarketplace(marketplaceContract).nrOfBids(saleId);
 
-        uint256 _maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer());
-        uint256 _xvmcPrice = IXvmcOracle(priceOracle).getPrice() * 1e8;
+        uint256 _maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer()) * 1e10;
+        uint256 _xvmcPrice = IXvmcOracle(priceOracle).getPrice();
 
         uint256 highestOffer;
         uint256 highestOfferId;
@@ -142,8 +142,8 @@ contract XVMCnftAuction is ERC721Holder {
         require(_valid, "bid invalid");
         require(_token == xvmc || _token == address(1337), "illegal token attempt");
 
-        uint256 _maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer());
-        uint256 _xvmcPrice = IXvmcOracle(priceOracle).getPrice() * 1e8;
+        uint256 _maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer()) * 1e10;
+        uint256 _xvmcPrice = IXvmcOracle(priceOracle).getPrice();
 
         if(_token == xvmc) {
             uint256 currentBid = _xvmcPrice * _bidAmount;
