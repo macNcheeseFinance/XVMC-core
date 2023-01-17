@@ -39,11 +39,13 @@ interface IXVMC {
  */
 contract XVMCnftAuction is ERC721Holder {
     address public immutable marketplaceContract;
-    address public immutable landContract;
     address public immutable priceOracle;
     address public immutable xvmc = 0x970ccEe657Dd831e9C37511Aa3eb5302C1Eb5EEe;
     address public immutable buyback = 0x0FECE73ab7c95258AF456661A16F10b615b51158;
     address public immutable chainlinkMATIC = 0xAB594600376Ec9fD91F8e885dADF0CE036862dE0;
+	address public immutable initiator;
+	
+	address public landContract;
 
     uint256 public auctionEnd;
 
@@ -55,13 +57,12 @@ contract XVMCnftAuction is ERC721Holder {
 
     constructor(
         address _marketplaceContract,
-        address _NFTcontract,
         address _xvmcOracle
     ) {
         marketplaceContract = _marketplaceContract;
-        landContract = _NFTcontract;
         priceOracle = _xvmcOracle;
         auctionEnd = block.timestamp + 86400 * 7; // 7 days
+		initiator = msg.sender;
 
         IERC721(_NFTcontract).setApprovalForAll(_marketplaceContract, true);
     }
@@ -170,6 +171,13 @@ contract XVMCnftAuction is ERC721Holder {
             safeTime[saleId] = block.timestamp;
         }
     }
+	
+	function initializeLandContract(address _landContract) external {
+		require(landContract == address(0), "already initialized");
+		require(msg.sender == initiator, "illegal move");
+		
+		landContract = _landContract;
+	}
 
     function cashoutToBuyback() external {
         IERC20(xvmc).transfer(buyback, IERC20(xvmc).balanceOf(address(this)));
