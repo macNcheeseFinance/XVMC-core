@@ -63,8 +63,6 @@ contract XVMCnftAuction is ERC721Holder {
         priceOracle = _xvmcOracle;
         auctionEnd = block.timestamp + 86400 * 7; // 7 days
 		initiator = msg.sender;
-
-        IERC721(_NFTcontract).setApprovalForAll(_marketplaceContract, true);
     }
 
     function setNFTforAuction(uint256[] calldata tokenId) external {
@@ -177,6 +175,8 @@ contract XVMCnftAuction is ERC721Holder {
 		require(msg.sender == initiator, "illegal move");
 		
 		landContract = _landContract;
+        
+        IERC721(_landContract).setApprovalForAll(marketplaceContract, true);
 	}
 
     function cashoutToBuyback() external {
