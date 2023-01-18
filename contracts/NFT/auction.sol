@@ -147,7 +147,7 @@ contract XVMCnftAuction is ERC721Holder {
         if(_token == xvmc) {
             uint256 currentBid = _xvmcPrice * _bidAmount;
 
-            if(!(currentBid > highestBidXvmc[bidId] && currentBid > highestBidMatic[bidId])) {
+            if(!(currentBid > highestBidXvmc[bidId] * _xvmcPrice && currentBid > highestBidMatic[bidId] * _maticPrice)) {
                 ( , , , bool _valid2) = IMarketplace(marketplaceContract).bids(saleId, highestBidId[saleId]);
                 require(!_valid2, "bid is still valid, but not highest offer"); //bid is invalid, can be replaced
             }
@@ -159,7 +159,7 @@ contract XVMCnftAuction is ERC721Holder {
         } else if(_token == address(1337)) {
             uint256 currentBid = _maticPrice * _bidAmount;
 
-            if(!(currentBid > highestBidXvmc[bidId] && currentBid > highestBidMatic[bidId])) {
+            if(!(currentBid > highestBidXvmc[bidId] * _xvmcPrice && currentBid > highestBidMatic[bidId] * _maticPrice)) {
                 ( , , , bool _valid2) = IMarketplace(marketplaceContract).bids(saleId, highestBidId[saleId]);
                 require(!_valid2, "bid is still valid, but not highest offer"); //bid is invalid, can be replaced
             }
