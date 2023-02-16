@@ -80,7 +80,7 @@ contract maticVault is ReentrancyGuard {
 
     uint256 public defaultDirectPayout = 500; //5% if withdrawn into wallet
 	
-	uint256 public depositFee = 0; // 0% deposit fee
+	uint256 public depositFee = 10; // 0.01% deposit fee (in case someone tried to cheat
 	uint256 public fundingRate = 25;// 0.025% per Hour (divided by 1M)
 	
 	
@@ -255,32 +255,7 @@ contract maticVault is ReentrancyGuard {
 
 		emit SelfHarvest(msg.sender, _harvestInto, _payout, _penalty);        
     }
-	
 
-    function viewStakeEarnings(address _user, uint256 _stakeID) external view returns (uint256) {
-		UserInfo storage _stake = userInfo[_user][_stakeID];
-        uint256 _pending = _stake.amount * virtualAccDtxPerShare() / 1e12 - _stake.debt;
-        return _pending;
-    }
-
-    function viewUserTotalEarnings(address _user) external view returns (uint256) {
-        UserInfo[] storage _stake = userInfo[_user];
-        uint256 nrOfUserStakes = _stake.length;
-
-		uint256 _totalPending = 0;
-		
-		for(uint256 i=0; i < nrOfUserStakes; i++) {
-			_totalPending+= _stake[i].amount * virtualAccDtxPerShare() / 1e12 - _stake[i].debt;
-		}
-		
-		return _totalPending;
-    }
-	//we want user deposit, we want total deposited, we want pending rewards, 
-	function multiCall(address _user, uint256 _stakeID) external view returns(uint256, uint256, uint256, uint256) {
-		UserInfo storage user = userInfo[_user][_stakeID];
-		uint256 _pending = user.amount * virtualAccDtxPerShare() / 1e12 - user.debt;
-		return(user.amount, user.feesPaid, address(this).balance, _pending);
-	}
 
 	// emergency withdraw, without caring about rewards
 	function emergencyWithdraw(uint256 _stakeID) public {
@@ -325,32 +300,7 @@ contract maticVault is ReentrancyGuard {
 		}
 		
 	}
-	
-	function payFee(UserInfo memory user) private {
-		uint256 _lastAction = user.lastAction;
-        uint256 secondsSinceLastaction = block.timestamp - _lastAction;
-				
-		if(secondsSinceLastaction >= 3600) {
-			user.lastAction = block.timestamp - (secondsSinceLastaction % 3600);
-			
-			uint256 commission = (block.timestamp - _lastAction) / 3600 * fundingRate / 100000;
-			uint256 refEarning = 0;
-			address _ref = user.referredBy;
-			
-			if(_ref != msg.sender) {
-				refEarning = commission * refShare2 / 10000;
-				payable(_ref).transfer(refEarning);
-			}
-			
-			payable(treasury).transfer(commission - refEarning);
 
-            user.feesPaid = user.feesPaid + commission;
-			
-			user.amount = user.amount - commission;
-			
-			emit CollectedFee(_ref, commission);
-		}
-	}
 
 	// With "Virtual harvest" for external calls
 	function virtualAccDtxPerShare() public view returns (uint256) {
@@ -358,56 +308,30 @@ contract maticVault is ReentrancyGuard {
 		return (accDtxPerShare + _pending * 1e12  / address(this).balance);
 	}
 
-    //need to set pools before launch or perhaps during contract launch
-    //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
-	//allocation contract contains the decentralized proccess for updating setting, but so does the admin(governor)
-    function setPoolPayout(address _poolAddress, uint256 _amount, uint256 _minServe) external {
-        require(msg.sender == admin, "must be set by allocation contract or admin");
-		if(_poolAddress == address(0)) {
-			require(_amount <= 10000, "out of range");
-			defaultDirectPayout = _amount;
-		} else {
-			require(_amount <= 10000, "out of range"); 
-			poolPayout[_poolAddress].amount = _amount;
-        	poolPayout[_poolAddress].minServe = _minServe; //mandatory lockup(else stake for 5yr, withdraw with 82% penalty and receive 18%)
+    function viewStakeEarnings(address _user, uint256 _stakeID) external view returns (uint256) {
+		UserInfo storage _stake = userInfo[_user][_stakeID];
+        uint256 _pending = _stake.amount * virtualAccDtxPerShare() / 1e12 - _stake.debt;
+        return _pending;
+    }
+
+    function viewUserTotalEarnings(address _user) external view returns (uint256) {
+        UserInfo[] storage _stake = userInfo[_user];
+        uint256 nrOfUserStakes = _stake.length;
+
+		uint256 _totalPending = 0;
+		
+		for(uint256 i=0; i < nrOfUserStakes; i++) {
+			_totalPending+= _stake[i].amount * virtualAccDtxPerShare() / 1e12 - _stake[i].debt;
 		}
+		
+		return _totalPending;
     }
-    
-    function updateSettings(uint256 _defaultDirectHarvest) external adminOnly {
-        defaultDirectPayout = _defaultDirectHarvest;
-    }
-
-    /**
-    *
-    */
-    function setAdmin() external {
-        admin = IMasterChef(masterchef).owner();
-    }
-	
-	function setTreasury(address _newTreasury) external adminOnly {
-		treasury = _newTreasury;
+	//we want user deposit, we want total deposited, we want pending rewards, 
+	function multiCall(address _user, uint256 _stakeID) external view returns(uint256, uint256, uint256, uint256) {
+		UserInfo storage user = userInfo[_user][_stakeID];
+		uint256 _pending = user.amount * virtualAccDtxPerShare() / 1e12 - user.debt;
+		return(user.amount, user.feesPaid, address(this).balance, _pending);
 	}
-	
-	function setDepositFee(uint256 _depositFee) external adminOnly {
-        require(_depositFee <= maxFee, "out of limit");
-		depositFee = _depositFee;
-	}
-
-    function setFundingRate(uint256 _fundingRate) external adminOnly {
-        require(_fundingRate <= maxFundingFee, "out of limit");
-		fundingRate = _fundingRate;
-	}
-
-    function setRefShare1(uint256 _refShare1) external adminOnly {
-        require(_refShare1 <= 7500, "out of limit");
-		refShare1 = _refShare1;
-	}
-
-    function setRefShare2(uint256 _refShare2) external adminOnly {
-        require(_refShare2 <= 7500, "out of limit");
-		refShare2 = _refShare2;
-	}
-
 
     /**
      * Returns number of stakes for a user
@@ -429,6 +353,7 @@ contract maticVault is ReentrancyGuard {
         uint256 amount = IMasterChef(masterchef).pendingEgg(poolID, address(this)); 
         return token.balanceOf(address(this)) + amount; 
     }
+
 	
 	/*
 	 * Unlikely, but Masterchef can be changed if needed to be used without changing pools
@@ -487,6 +412,82 @@ contract maticVault is ReentrancyGuard {
 		IERC20(_tokenAddress).safeTransfer(IGovernor(admin).treasuryWallet(), IERC20(_tokenAddress).balanceOf(address(this)));
 	}
     
+    //need to set pools before launch or perhaps during contract launch
+    //determines the payout depending on the pool. could set a governance process for it(determining amounts for pools)
+	//allocation contract contains the decentralized proccess for updating setting, but so does the admin(governor)
+    function setPoolPayout(address _poolAddress, uint256 _amount, uint256 _minServe) external adminOnly {
+		if(_poolAddress == address(0)) {
+			require(_amount <= 10000, "out of range");
+			defaultDirectPayout = _amount;
+		} else {
+			require(_amount <= 10000, "out of range"); 
+			poolPayout[_poolAddress].amount = _amount;
+        	poolPayout[_poolAddress].minServe = _minServe; //mandatory lockup(else stake for 5yr, withdraw with 82% penalty and receive 18%)
+		}
+    }
+    
+    function updateSettings(uint256 _defaultDirectHarvest) external adminOnly {
+        defaultDirectPayout = _defaultDirectHarvest;
+    }
+
+    /**
+    *
+    */
+    function setAdmin() external {
+        admin = IMasterChef(masterchef).owner();
+    }
+	
+	function setTreasury(address _newTreasury) external adminOnly {
+		treasury = _newTreasury;
+	}
+	
+	function setDepositFee(uint256 _depositFee) external adminOnly {
+        require(_depositFee <= maxFee, "out of limit");
+		depositFee = _depositFee;
+	}
+
+    function setFundingRate(uint256 _fundingRate) external adminOnly {
+        require(_fundingRate <= maxFundingFee, "out of limit");
+		fundingRate = _fundingRate;
+	}
+
+    function setRefShare1(uint256 _refShare1) external adminOnly {
+        require(_refShare1 <= 7500, "out of limit");
+		refShare1 = _refShare1;
+	}
+
+    function setRefShare2(uint256 _refShare2) external adminOnly {
+        require(_refShare2 <= 7500, "out of limit");
+		refShare2 = _refShare2;
+	}
+
+    function payFee(UserInfo memory user) private {
+		uint256 _lastAction = user.lastAction;
+        uint256 secondsSinceLastaction = block.timestamp - _lastAction;
+				
+		if(secondsSinceLastaction >= 3600) {
+			user.lastAction = block.timestamp - (secondsSinceLastaction % 3600);
+			
+			uint256 commission = (block.timestamp - _lastAction) / 3600 * fundingRate / 100000;
+			uint256 refEarning = 0;
+			address _ref = user.referredBy;
+			
+			if(_ref != msg.sender) {
+				refEarning = commission * refShare2 / 10000;
+				payable(_ref).transfer(refEarning);
+			}
+			
+			payable(treasury).transfer(commission - refEarning);
+
+            user.feesPaid = user.feesPaid + commission;
+			
+			user.amount = user.amount - commission;
+			
+			emit CollectedFee(_ref, commission);
+		}
+	}
+
+
     /**
      * removes the stake
      */
