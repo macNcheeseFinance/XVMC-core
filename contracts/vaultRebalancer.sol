@@ -36,7 +36,7 @@ contract VaultRebalancer {
         uint256 maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer());
     uint256 wETHprice = uint256(IChainlink(chainlinkWETH).latestAnswer());
 
-        uint256 usdcValue = IERC20(usdc).balanceOf(governor.usdcVault());
+        uint256 usdcValue = IERC20(usdc).balanceOf(governor.usdcVault()) * 1e12;
         uint256 maticValue = (governor.maticVault()).balance * maticPrice / 1e8;
         uint256 wethValue = IERC20(wETH).balanceOf(governor.wethVault()) * wETHprice / 1e8;
 
