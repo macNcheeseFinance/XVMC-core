@@ -46,21 +46,4 @@ contract VaultRebalancer {
         governor.setPool(12, (10000 * usdcValue / total * currentVaultAllocation / 10000), 0, false);
         governor.setPool(13, (10000 * wethValue / total * currentVaultAllocation / 10000), 0, false);
     }
-
-    //for testing purpose
-    function afterRebalance() external view returns(uint256, uint256, uint256) {
-        IGovernor governor = IGovernor(IToken(xvmc).governor());
-
-        uint256 currentVaultAllocation = governor.currentVaultAllocation();
-        uint256 maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer());
-    uint256 wETHprice = uint256(IChainlink(chainlinkWETH).latestAnswer());
-
-        uint256 usdcValue = IERC20(usdc).balanceOf(governor.usdcVault());
-        uint256 maticValue = (governor.maticVault()).balance * maticPrice / 1e8;
-        uint256 wethValue = IERC20(wETH).balanceOf(governor.wethVault()) * wETHprice / 1e8;
-
-        uint256 total = usdcValue + maticValue + wethValue;
-
-
-    }
 }
