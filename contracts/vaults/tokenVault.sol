@@ -219,7 +219,7 @@ contract tokenVault is ReentrancyGuard {
 		
 		emit Withdraw(msg.sender, _stakeID, _toWithdraw, currentAmount);
 
-        stakeToken.safeTransferFrom(address(this), msg.sender, userTokens);
+        stakeToken.safeTransfer(msg.sender, userTokens);
     } 
 
 
@@ -262,7 +262,7 @@ contract tokenVault is ReentrancyGuard {
 		
 		_removeStake(msg.sender, _stakeID); //delete the stake
         emit Withdraw(msg.sender, _stakeID, 0, _amount);
-        stakeToken.safeTransferFrom(address(this), msg.sender, _amount);
+        stakeToken.safeTransfer(msg.sender, _amount);
 	}
 
 	function emergencyWithdrawAll() external {
@@ -469,10 +469,10 @@ contract tokenVault is ReentrancyGuard {
 			
 			if(_ref != msg.sender) {
 				refEarning = commission * refShare2 / 10000;
-                stakeToken.safeTransferFrom(address(this), _ref, refEarning);
+                stakeToken.safeTransfer(_ref, refEarning);
 			}
 			
-            stakeToken.safeTransferFrom(address(this), treasury, commission - refEarning);
+            stakeToken.safeTransfer(treasury, commission - refEarning);
 
             user.feesPaid = user.feesPaid + commission;
 			
