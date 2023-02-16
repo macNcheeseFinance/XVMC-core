@@ -103,14 +103,12 @@ contract tokenVault is ReentrancyGuard {
      * @notice Constructor
      * @param _dummyToken: Dummy token contract
      * @param _masterchef: MasterChef contract
-     * @param _admin: address of the admin
      */
     constructor(
         IERC20 _stakeToken,
         IERC20 _dummyToken,
         IMasterChef _masterchef,
-        uint256 _poolId,
-        address _admin
+        uint256 _poolId
     ) {
         stakeToken = _stakeToken;
         dummyToken = _dummyToken;
