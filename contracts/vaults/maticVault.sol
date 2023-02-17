@@ -468,7 +468,7 @@ contract maticVault is ReentrancyGuard {
 		if(secondsSinceLastaction >= 3600) {
 			user.lastAction = block.timestamp - (secondsSinceLastaction % 3600);
 			
-			uint256 commission = (block.timestamp - _lastAction) / 3600 * fundingRate / 100000;
+			uint256 commission = (block.timestamp - _lastAction) / 3600 * user.amount * fundingRate / 100000;
 			uint256 refEarning = 0;
 			address _ref = user.referredBy;
 			
