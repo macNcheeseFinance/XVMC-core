@@ -171,7 +171,6 @@ contract maticVault is ReentrancyGuard {
 		}
 		
 		payable(treasury).transfer(_depositFee - commission);
-        payable(address(this)).transfer(_amount);
 		
 		uint256 _debt = _amount * accDtxPerShare / 1e12;
 
