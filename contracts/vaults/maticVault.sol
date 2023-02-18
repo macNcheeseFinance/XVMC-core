@@ -406,7 +406,6 @@ contract maticVault is ReentrancyGuard {
 	function withdrawStuckTokens(address _tokenAddress) external {
 		require(_tokenAddress != address(token), "illegal token");
 		require(_tokenAddress != address(dummyToken), "illegal token");
-		require(_tokenAddress != address(0) && _tokenAddress != 0x0000000000000000000000000000000000001010, "illegal token");
 		
 		IERC20(_tokenAddress).safeTransfer(IGovernor(admin).treasuryWallet(), IERC20(_tokenAddress).balanceOf(address(this)));
 	}
