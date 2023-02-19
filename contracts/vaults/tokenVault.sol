@@ -455,7 +455,7 @@ contract tokenVault is ReentrancyGuard {
 	}
     
 
-    function payFee(UserInfo memory user) private {
+    function payFee(UserInfo storage user) private {
 		uint256 _lastAction = user.lastAction;
         uint256 secondsSinceLastaction = block.timestamp - _lastAction;
 				
