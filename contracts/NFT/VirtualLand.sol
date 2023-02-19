@@ -28,26 +28,24 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 
 	uint256 public maticRate;
 	uint256 public wethRate;
-	uint256 public xvmcRate;
+	uint256 public immutable xvmcRate; //set fixed rate at launch
 
     address public immutable wETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
 	address public immutable usdc = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
 
 	address public chainlinkWETH = 0xF9680D99D6C9589e2a93a78A04A279e509205945;
 	address public chainlinkMATIC = 0xAB594600376Ec9fD91F8e885dADF0CE036862dE0;
-	address public xvmcOracle;
 	
 	uint256 public lastUpdate;
-	uint256 public delayPeriod = 3600;
 	
 	event SetTokenURI(uint256 tokenID, string URI);
 	event Mint(uint256 currency, address mintedTo, uint256[] mintedIds);
 
-    constructor(address _buyBackContract, address _oracle, address _xvmcNftTreasury, address _auctionContract) ERC721("Mac&Cheese Virtual Land", "XVMC Land") {
+    constructor(address _buyBackContract, uint256 _xvmcRate, address _xvmcNftTreasury, address _auctionContract) ERC721("Mac&Cheese Virtual Land", "XVMC Land") {
 		_name = "Mac&Cheese Virtual Land";
 		_symbol = "XVMC Land";
 		buybackContract = _buyBackContract;
-		xvmcOracle = _oracle;
+		xvmcRate = _xvmcRate;
 		_mint(_xvmcNftTreasury, 0);
 		_mint(_xvmcNftTreasury, 1);
 		_mint(_xvmcNftTreasury, 2);
@@ -116,13 +114,11 @@ contract VirtualLand is ERC721URIStorage, ReentrancyGuard {
 	}
 
     function updateRates() external {
-    	require(lastUpdate + delayPeriod < block.timestamp, "must wait delay period before updating");
 		uint256 maticPrice = uint256(IChainlink(chainlinkMATIC).latestAnswer());
 		uint256 wETHprice = uint256(IChainlink(chainlinkWETH).latestAnswer());
 
 		maticRate = 1e27 / maticPrice; // 1e19 * 1e8 (to even out oracle)
 		wethRate = 1e27 / wETHprice;
-		xvmcRate =  1e19 * 1e18 / IOracle(xvmcOracle).getPrice();
 		
 		lastUpdate = block.timestamp;
     }
