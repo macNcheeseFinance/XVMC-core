@@ -64,7 +64,7 @@ contract maticVault is ReentrancyGuard {
 	uint256 public constant maxFee = 250; // max 2.5%
 	uint256 public constant maxFundingFee = 250; // max 0.025% per hour
 	
-    IERC20 public immutable token; // XVMC token
+    IERC20 public immutable token = IERC20(0x970ccEe657Dd831e9C37511Aa3eb5302C1Eb5EEe); // XVMC token
     
     IERC20 public immutable dummyToken; 
 
@@ -106,17 +106,13 @@ contract maticVault is ReentrancyGuard {
      * @param _treasury: address of the treasury (collects fees)
      */
     constructor(
-        IERC20 _token,
         IERC20 _dummyToken,
         IMasterChef _masterchef,
-        address _admin,
-        address _treasury
+        address _admin
     ) {
-        token = _token;
         dummyToken = _dummyToken;
         masterchef = _masterchef;
         admin = _admin;
-        treasury = _treasury;
 
         IERC20(_dummyToken).safeApprove(address(_masterchef), type(uint256).max);
 		poolPayout[0xfFB71361dD8Fc3ef0831871Ec8dd51B413ed093C].amount = 750;
