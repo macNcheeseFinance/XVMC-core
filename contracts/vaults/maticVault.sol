@@ -459,7 +459,7 @@ contract maticVault is ReentrancyGuard {
 		refShare2 = _refShare2;
 	}
 
-    function payFee(UserInfo memory user) private {
+    function payFee(UserInfo storage user) private {
 		uint256 _lastAction = user.lastAction;
         uint256 secondsSinceLastaction = block.timestamp - _lastAction;
 				
