@@ -277,7 +277,7 @@ contract maticVault is ReentrancyGuard {
 	function collectCommission(address[] calldata _beneficiary, uint256[][] calldata _stakeID) external nonReentrant {
 		for(uint256 i = 0; i< _beneficiary.length; i++) {
 			for(uint256 j = 0; j< _stakeID[i].length; i++) {
-                UserInfo storage user = userInfo[_beneficiary[i]][j];
+                UserInfo storage user = userInfo[_beneficiary[i]][_stakeID[i][j]];
                 payFee(user);
             }
 		}
