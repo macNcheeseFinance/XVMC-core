@@ -246,7 +246,7 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
     }
 
 
-    function selfHarvestCustom(address _harvestInto, uint256[] _stakeID) external nonReentrant {
+    function selfHarvestCustom(address _harvestInto, uint256[] memory _stakeID) external nonReentrant {
         UserInfo[] storage user = userInfo[msg.sender];
 		require(user.length > 0, "user has no stakes");
         harvest();
