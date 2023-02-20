@@ -402,17 +402,10 @@ contract XVMCnftStaking is ReentrancyGuard, ERC721Holder {
     }
 
 	
-    /**
-     * calculates pending rewards + balance of tokens in this address + artificial token debt(how much each NFT is worth)
-	 * we harvest before every action, pending rewards not needed
-     */
-    function balanceOf() internal view returns (uint256) {
-        return token.balanceOf(address(this)) + tokenDebt; 
-    }
 	//public lookup for UI
     function publicBalanceOf() public view returns (uint256) {
         uint256 amount = IMasterChef(masterchef).pendingEgg(poolID, address(this)); 
-        return token.balanceOf(address(this)) + amount + tokenDebt; 
+        return token.balanceOf(address(this)) + amount; 
     }
 	
 	/*
