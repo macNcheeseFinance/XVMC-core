@@ -97,14 +97,6 @@ contract maticVault is ReentrancyGuard {
 	
 	event CollectedFee(address ref, uint256 amount);
 
-    /**
-     * @notice Constructor
-     * @param _token: DTX token contract
-     * @param _dummyToken: Dummy token contract
-     * @param _masterchef: MasterChef contract
-     * @param _admin: address of the admin
-     * @param _treasury: address of the treasury (collects fees)
-     */
     constructor(
         IERC20 _dummyToken,
         IMasterChef _masterchef,
