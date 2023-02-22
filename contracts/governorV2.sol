@@ -134,7 +134,7 @@ interface IDummy {
     function mint(address to, uint256 amount) external;
 }
 
-interface IMaticVault {
+interface IVault {
     function setDepositFee(uint256 _depositFee) external;
     function setFundingRate(uint256 _fundingRate) external;
     function setRefShare1(uint256 _refShare1) external;
@@ -231,13 +231,17 @@ contract XVMCgovernor {
 
     address public immutable oldNftStakingContract = 0xD7bf9953d090D6Eb5fC8f6707e88Ea057beD08cB;
 
-	address public immutable nftStakingContract = 0xEc94d2b09aD2b8493718D1edca6EE3c954E7F320;
+	address public immutable nftStakingContract = 0x1475406Bf1299686A28574e083ce5884A6d7d4D6;
 
 	address public immutable nftAllocationContract = 0x765A3045902B164dA1a7619BEc58DE64cf7Bdfe2;
 
-    address public immutable maticVault = 0x637e8158782D1006983d620C5eF80823410fF141;
+    address public immutable maticVault = 0x8C6bdF8765eeaEdbf678643a2A3787577228ac16;
 
-    
+    address public immutable usdcVault = 0xDd2B0C76Cf9646506d3A872d86585A0F305575B0;
+
+    address public immutable wethVault = 0x064D3FFfda0DCddf4b46A852E65Ffc4B12176554;
+
+    address public immutable vaultRebalancer = 0x229f41A622E745E8cb7a9a34ea3bB42b2EFD3C05; // rebalances matic, usdc, weth vault accordingly
 
     //Addresses for treasuryWallet and NFT wallet
 
@@ -285,8 +289,6 @@ contract XVMCgovernor {
 
     uint256 public immutable innitTimestamp;
 
-    
-
     mapping(address => uint256) private _rollBonus;
 
 	
@@ -299,7 +301,7 @@ contract XVMCgovernor {
 
 	uint256 public newGovernorBlockDelay = 189000; //in blocks (roughly 5 days at beginning)
 
-    
+    uint256 public currentVaultAllocation = 1500;
 
     uint256 public costToVote = 500000 * 1e18;  // 500K coins. All proposals are valid unless rejected. This is a minimum to prevent spam
 
@@ -369,6 +371,7 @@ contract XVMCgovernor {
 
 
 
+
     event SetInflation(uint256 rewardPerBlock);
 
     event TransferOwner(address newOwner, uint256 timestamp);
@@ -403,13 +406,9 @@ contract XVMCgovernor {
 
 
 
-
-
     function innitializeUpdates() external {
 
         require(!initializedUpdates, "already updated");
-
-
 
         InftStaking(oldNftStakingContract).setAdmin(); // updates new governor in the old nft staking contr(act 
 
@@ -424,21 +423,29 @@ contract XVMCgovernor {
         InftStaking(nftStakingContract).setAdmin(); // updates admin in new staking contract
         InftStaking(nftStakingContract).startEarning(); // starts earning in the new nft staking contract (deposits to chef)
 
-
-
         InftAllocation(nftAllocationContract).setAllocationContract(0x717AFa6fe5A9857d0246bEa28730Ab482aE88379, true); // sets allocation contract for Land contract
 
         InftAllocation(nftAllocationContract).setAllocationContract(0x31806Bc381fac3E240AE49B387d5618AFBfC3D7B, true); // sets allocation contract for Trump Cards & SAND land
         InftAllocation(nftAllocationContract).setAllocationContract(0x53Cb95E510Ee65d692c58a7720E6fEc8b6DA8d52, true); // sets allocation contract for Lens protocol
         InftAllocation(nftAllocationContract).setAllocationContract(0xE1445bBdA7A8826a52820031FD9b342020d7644d, true); // sets allocation contract for Polygon Ape YC
         InftAllocation(nftAllocationContract).setAllocationContract(0xeCcB61076914d85E666eCdF0A005A54125B77e39, true); // sets allocation contract Eggcrypto Monsters
+        InftAllocation(nftAllocationContract).setAllocationContract(0x697FAe198033cc014B9f347E12E69a973181827C, true); // sets allocation contract Collab.land
 
+        IMasterChef(masterchef).add(500, IERC20(0xf5aa9f6b046A61d83F808810547c7765C5Bbf7a2), 0, false); // 1500 is roughly 1% of rewards to begin with (150,000 total)
+        IMasterChef(masterchef).add(500, IERC20(0xAed2035397d2b60Be860d239Da7550234EF999C9), 0, false); // 1500 is roughly 1% of rewards to begin with (150,000 total)
+        IMasterChef(masterchef).add(500, IERC20(0x809Cc3aa5ed82db0F05a72F13C5dc566907e0799), 0, false); // 1500 is roughly 1% of rewards to begin with (150,000 total)
 
-
-        IMasterChef(masterchef).add(1500, IERC20(0xf5aa9f6b046A61d83F808810547c7765C5Bbf7a2), 0, false); // 1500 is roughly 1% of rewards to begin with (150,000 total)
         IDummy(0xf5aa9f6b046A61d83F808810547c7765C5Bbf7a2).mint(maticVault, 1000000*1e18);
         InftStaking(maticVault).setAdmin();
         InftStaking(maticVault).startEarning();
+
+        IDummy(0xAed2035397d2b60Be860d239Da7550234EF999C9).mint(usdcVault, 1000000*1e18);
+        InftStaking(usdcVault).setAdmin();
+        InftStaking(usdcVault).startEarning();
+
+        IDummy(0x809Cc3aa5ed82db0F05a72F13C5dc566907e0799).mint(wethVault, 1000000*1e18);
+        InftStaking(wethVault).setAdmin();
+        InftStaking(wethVault).startEarning();
 
 
         IToken(token).setTrustedContract(0xdf47e7a036A6a85F92898176b5A8B4B4b9fBF25A, false); //renounce previous farm contract
@@ -549,57 +556,6 @@ contract XVMCgovernor {
 
     }
 
-    
-
-    /**
-
-     * Mass equivalent to massUpdatePools in masterchef, but only for relevant pools
-
-    */
-
-    function updateAllPools() external {
-
-        IMasterChef(masterchef).updatePool(0); // XVMC-USDC and XVMC-wmatic
-
-    	IMasterChef(masterchef).updatePool(1); 
-
-    	IMasterChef(masterchef).updatePool(8); //meme pool 8,9
-
-    	IMasterChef(masterchef).updatePool(9);
-
-		IMasterChef(masterchef).updatePool(10); // NFT staking
-
-        IMasterChef(masterchef).updatePool(acPool1ID);
-
-    	IMasterChef(masterchef).updatePool(acPool2ID); 
-
-    	IMasterChef(masterchef).updatePool(acPool3ID); 
-
-    	IMasterChef(masterchef).updatePool(acPool4ID); 
-
-    	IMasterChef(masterchef).updatePool(acPool5ID); 
-
-    	IMasterChef(masterchef).updatePool(acPool6ID); 
-
-    }
-
-    
-
-     /**
-
-     * Rebalances farms in masterchef
-
-     */
-
-    function rebalanceFarms() external {
-
-    	IMasterChef(masterchef).updatePool(0);
-
-    	IMasterChef(masterchef).updatePool(1); 
-
-    }
-
-   
 
      /**
 
@@ -651,22 +607,7 @@ contract XVMCgovernor {
 
     	IMasterChef(masterchef).set(acPool6ID, (balancePool6 * 15 / 1e26), 0, false); 
 
-    	
-
-    	//equivalent to massUpdatePools() in masterchef, but we loop just through relevant pools
-
-    	IMasterChef(masterchef).updatePool(acPool1ID);
-
-    	IMasterChef(masterchef).updatePool(acPool2ID); 
-
-    	IMasterChef(masterchef).updatePool(acPool3ID); 
-
-    	IMasterChef(masterchef).updatePool(acPool4ID); 
-
-    	IMasterChef(masterchef).updatePool(acPool5ID); 
-
-    	IMasterChef(masterchef).updatePool(acPool6ID); 
-
+    	IMasterChef(masterchef).massUpdatePools();
     }
 
 	
@@ -910,10 +851,13 @@ contract XVMCgovernor {
 
 	function setPool(uint256 _pid, uint256 _allocPoint, uint16 _depositFeeBP, bool _withUpdate) external {
 
-	    require(msg.sender == farmContract);
+	    require(msg.sender == farmContract || msg.sender == vaultRebalancer);
 
 	    IMasterChef(masterchef).set(_pid, _allocPoint, _depositFeeBP, _withUpdate);
 
+        if(_pid == 11 && msg.sender != vaultRebalancer) {
+            currentVaultAllocation = _allocPoint;
+        }
 	}
 
 	
@@ -1021,17 +965,28 @@ contract XVMCgovernor {
         require(msg.sender == farmContract);
 
         if(_type == 0) {
-            IMaticVault(maticVault).setDepositFee(_amount);
+            IVault(maticVault).setDepositFee(_amount);
+            IVault(usdcVault).setDepositFee(_amount);
+            IVault(wethVault).setDepositFee(_amount);
         } else if(_type == 2) {
-            IMaticVault(maticVault).setFundingRate(_amount);
+            IVault(maticVault).setFundingRate(_amount);
+            IVault(usdcVault).setFundingRate(_amount);
+            IVault(wethVault).setFundingRate(_amount);
         } else if(_type == 3) {
-            IMaticVault(maticVault).setRefShare1(_amount);
+            IVault(maticVault).setRefShare1(_amount);
+            IVault(usdcVault).setRefShare1(_amount);
+            IVault(wethVault).setRefShare1(_amount);
         } else if(_type == 4) {
-            IMaticVault(maticVault).setRefShare2(_amount);
+            IVault(maticVault).setRefShare2(_amount);
+            IVault(usdcVault).setRefShare2(_amount);
+            IVault(wethVault).setRefShare2(_amount);
         } else if(_type == 5) {
-            IMaticVault(maticVault).updateSettings(_amount);
+            IVault(maticVault).updateSettings(_amount);
+            IVault(usdcVault).updateSettings(_amount);
+            IVault(wethVault).updateSettings(_amount);
         }
     }
+
  
 	function enforceRewardReduction(bool withUpdate) private {
         uint256 allocPoint; uint16 depositFeeBP;
